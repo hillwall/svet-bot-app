@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    /* ТУТ ВСІ ТВОЇ СТИЛІ З ФАЙЛУ ТЕСТ бот html.txt */
+    :root { --bg: var(--tg-theme-bg-color, #f0f2f5); --card: var(--tg-theme-secondary-bg-color, #ffffff); --text: var(--tg-theme-text-color, #222); --hint: var(--tg-theme-hint-color, #777); --accent: #2481cc; --red: #ff4d4f; --white: #ffffff; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 12px; display: flex; flex-direction: column; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    select { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); background: var(--card); color: var(--text); font-size: 0.9rem; font-weight: bold; outline: none; }
+    .tabs { display: flex; background: rgba(0,0,0,0.05); border-radius: 10px; padding: 2px; margin-bottom: 12px; }
+    .tab { flex: 1; text-align: center; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+    .tab.active { background: var(--card); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .status-card { background: var(--card); border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-size: 0.9rem; min-height: 40px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
+    .hour { aspect-ratio: 1.8; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; border-radius: 8px; background: var(--white); color: #333; border: 1px solid rgba(0,0,0,0.05); position: relative; }
+    .off-full { background-color: var(--red) !important; color: white !important; border: none; }
+    .off-left { background: linear-gradient(90deg, var(--red) 50%, var(--white) 50%) !important; }
+    .off-right { background: linear-gradient(90deg, var(--white) 50%, var(--red) 50%) !important; }
+    .current { outline: 3px solid var(--accent); z-index: 10; }
+    .badge-new { position: absolute; top: -3px; right: -3px; background: #007aff; color: white; font-size: 7px; padding: 1px 4px; border-radius: 4px; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.3); z-index: 20; }
+    .loader-text { color: var(--hint); font-style: italic; font-size: 0.8rem; margin-top: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <div class="header-row">
+    <select id="q-select" onchange="changeQueue()">
+      <option value="1.1">Черга 1.1</option><option value="1.2">Черга 1.2</option>
+      <option value="2.1">Черга 2.1</option><option value="2.2">Черга 2.2</option>
+      <option value="3.1">Черга 3.1</option><option value="3.2">Черга 3.2</option>
+      <option value="4.1">Черга 4.1</option><option value="4.2">Черга 4.2</option>
+      <option value="5.1">Черга 5.1</option><option value="5.2">Черга 5.2</option>
+      <option value="6.1">Черга 6.1</option><option value="6.2">Черга 6.2</option>
+    </select>
+    <div class="date-badge" id="date-label">--.--</div>
+  </div>
+
+  <div class="tabs">
+    <div id="tab0" class="tab active" onclick="loadData(0)">СЬОГОДНІ</div>
+    <div id="tab1" class="tab" onclick="loadData(1)">НА ЗАВТРА</div>
+  </div>
+
+  <div id="status" class="status-card">Синхронізація...</div>
+  <div id="grid" class="grid"></div>
+  <div id="loader" class="loader-text" style="display:none;">⏳ Оновлення даних...</div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    // !!! СЮДИ ВСТАВ ПОСИЛАННЯ, ЯКЕ ТИ СКОПІЮВАВ У КРОЦІ 1 !!!
+    const WEB_APP_URL = "ТВОЄ_ПОСИЛАННЯ_З_GOOGLE_APPS_SCRIPT"; 
+
+    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "197183975";
+    let currentOffset = 0;
+
+    async function loadData(offset) {
+      currentOffset = offset;
+      document.getElementById('grid').innerHTML = ""; 
+      document.getElementById('status').innerText = "";
+      document.getElementById('loader').style.display = "block";
+      document.getElementById('tab0').classList.toggle('active', offset === 0);
+      document.getElementById('tab1').classList.toggle('active', offset === 1);
+      
+      try {
+        const response = await fetch(`${WEB_APP_URL}?action=getSchedule&chatId=${userId}&offset=${offset}`);
+        const data = await response.json();
+        render(data);
+      } catch (err) {
+        document.getElementById('status').innerText = "Помилка зв'язку з сервером.";
+      } finally {
+        document.getElementById('loader').style.display = "none";
+      }
+    }
+
+    async function changeQueue() {
+      const newQ = document.getElementById('q-select').value;
+      tg.HapticFeedback.impactOccurred('light');
+      
+      try {
+        await fetch(`${WEB_APP_URL}?action=saveQueue&chatId=${userId}&queue=${newQ}`);
+        loadData(currentOffset);
+      } catch (err) {
+        alert("Не вдалося зберегти чергу.");
+      }
+    }
+
+    function render(data) {
+      const statusEl = document.getElementById('status');
+      const gridEl = document.getElementById('grid');
+      const dateEl = document.getElementById('date-label');
+      const qSelect = document.getElementById('q-select');
+
+      if (data.error) {
+        statusEl.innerHTML = `<span style="color:var(--red); font-weight:bold;">${data.error}</span>`;
+        if (data.date) dateEl.innerText = data.date;
+        return;
+      }
+
+      dateEl.innerText = data.date;
+      qSelect.value = data.queue;
+      statusEl.innerHTML = data.status.replace(/\n/g, '<br>');
+
+      const nowH = new Date().getHours();
+
+      for (let h = 0; h < 24; h++) {
+        const cell = document.createElement('div');
+        const firstHalfOff = isTimeOff(h, 15, data.slots);
+        const secondHalfOff = isTimeOff(h, 45, data.slots);
+
+        if (firstHalfOff && secondHalfOff) cell.className = 'hour off-full';
+        else if (firstHalfOff) cell.className = 'hour off-left';
+        else if (secondHalfOff) cell.className = 'hour off-right';
+        else cell.className = 'hour';
+
+        if (data.changedSlots) {
+          const hasChange = data.slots.some((s, idx) => {
+            if (!data.changedSlots[idx]) return false;
+            const sH = parseInt(s.start.split(':')[0]);
+            let eH = s.end === "00:00" ? 24 : parseInt(s.end.split(':')[0]);
+            return h >= sH && h < eH;
+          });
+          if (hasChange) {
+            const badge = document.createElement('div');
+            badge.className = 'badge-new';
+            badge.innerText = 'NEW';
+            cell.appendChild(badge);
+          }
+        }
+
+        if (h === nowH && !data.isTomorrow) cell.classList.add('current');
+        cell.innerHTML += `${h.toString().padStart(2, '0')}-${(h+1).toString().padStart(2, '0')}`;
+        gridEl.appendChild(cell);
+      }
+    }
+
+    function isTimeOff(h, m, slots) {
+      const total = h * 60 + m;
+      return slots.some(s => {
+        if (!s.isOutage) return false;
+        const sM = parseInt(s.start.split(':')[0]) * 60 + parseInt(s.start.split(':')[1]);
+        let eM = s.end === "00:00" ? 1440 : parseInt(s.end.split(':')[0]) * 60 + parseInt(s.end.split(':')[1]);
+        return total >= sM && total < eM;
+      });
+    }
+
+    window.onload = () => loadData(0);
+  </script>
+</body>
+</html>
