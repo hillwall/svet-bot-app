@@ -160,48 +160,72 @@
     }
 
     function render(data) {
-      const statusEl = document.getElementById('status');
-      const gridEl = document.getElementById('grid');
-      const dateEl = document.getElementById('date-label');
-      const qSelect = document.getElementById('q-select');
+  const statusEl = document.getElementById('status');
+  const gridEl = document.getElementById('grid');
+  const dateEl = document.getElementById('date-label');
+  const qSelect = document.getElementById('q-select');
 
-      gridEl.innerHTML = "";
+  // Очищаємо вміст сітки
+  gridEl.innerHTML = "";
+  
+  // Скидаємо класи статусу до початкового стану (тільки базова картка)
+  statusEl.className = "status-card";
 
-      if (data.error) {
-        statusEl.innerHTML = data.error;
-        if (data.date) dateEl.innerText = data.date;
-        return;
-      }
+  // Логіка відображення блоку статусу:
+  // Якщо є помилка — завжди показуємо блок, щоб вивести текст помилки.
+  // Якщо помилки немає, але це графік на завтра — ховаємо блок, бо статус "Зараз" неактуальний.
+  if (data.error) {
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = `<span style="color:var(--red); font-weight:bold;">${data.error}</span>`;
+    if (data.date) dateEl.innerText = data.date;
+    return;
+  } else if (data.isTomorrow) {
+    statusEl.style.display = 'none';
+  } else {
+    statusEl.style.display = 'block';
+  }
 
-      dateEl.innerText = data.date;
-      qSelect.value = data.queue;
-      statusEl.innerHTML = data.status.replace(/\n/g, '<br>');
+  // Заповнюємо дату та чергу
+  dateEl.innerText = data.date;
+  qSelect.value = data.queue;
+  statusEl.innerHTML = data.status.replace(/\n/g, '<br>');
 
-      // Визначаємо колір статус-карти
-      if (data.status.includes("ВІДСУТНЄ")) {
-        statusEl.classList.add('status-off');
-      } else {
-        statusEl.classList.add('status-on');
-      }
+  // Визначаємо колір статус-карти (тільки для "Сьогодні")
+  if (!data.isTomorrow) {
+    if (data.status.includes("ВІДСУТНЄ")) {
+      statusEl.classList.add('status-off');
+    } else {
+      statusEl.classList.add('status-on');
+    }
+  }
 
-      const nowH = new Date().getHours();
+  const nowH = new Date().getHours();
 
-      for (let h = 0; h < 24; h++) {
-        const cell = document.createElement('div');
-        const firstHalfOff = isTimeOff(h, 15, data.slots);
-        const secondHalfOff = isTimeOff(h, 45, data.slots);
+  // Малюємо сітку годин
+  for (let h = 0; h < 24; h++) {
+    const cell = document.createElement('div');
+    const firstHalfOff = isTimeOff(h, 15, data.slots);
+    const secondHalfOff = isTimeOff(h, 45, data.slots);
 
-        if (firstHalfOff && secondHalfOff) cell.className = 'hour off-full';
-        else if (firstHalfOff) cell.className = 'hour off-left';
-        else if (secondHalfOff) cell.className = 'hour off-right';
-        else cell.className = 'hour';
-
-        if (h === nowH && !data.isTomorrow) cell.classList.add('current');
-        cell.innerHTML += `${h.toString().padStart(2, '0')}-${(h+1).toString().padStart(2, '0')}`;
-        gridEl.appendChild(cell);
-      }
+    if (firstHalfOff && secondHalfOff) {
+      cell.className = 'hour off-full';
+    } else if (firstHalfOff) {
+      cell.className = 'hour off-left';
+    } else if (secondHalfOff) {
+      cell.className = 'hour off-right';
+    } else {
+      cell.className = 'hour';
     }
 
+    // Підсвітка поточної години тільки на вкладці "Сьогодні"
+    if (h === nowH && !data.isTomorrow) {
+      cell.classList.add('current');
+    }
+    
+    cell.innerHTML += `${h.toString().padStart(2, '0')}-${(h+1).toString().padStart(2, '0')}`;
+    gridEl.appendChild(cell);
+  }
+}
     function isTimeOff(h, m, slots) {
       const total = h * 60 + m;
       return slots.some(s => {
