@@ -156,21 +156,6 @@ async function changeQueue() {
         else if (secondHalfOff) cell.className = 'hour off-right';
         else cell.className = 'hour';
 
-        if (data.changedSlots) {
-          const hasChange = data.slots.some((s, idx) => {
-            if (!data.changedSlots[idx]) return false;
-            const sH = parseInt(s.start.split(':')[0]);
-            let eH = s.end === "00:00" ? 24 : parseInt(s.end.split(':')[0]);
-            return h >= sH && h < eH;
-          });
-          if (hasChange) {
-            const badge = document.createElement('div');
-            badge.className = 'badge-new';
-            badge.innerText = 'NEW';
-            cell.appendChild(badge);
-          }
-        }
-
         if (h === nowH && !data.isTomorrow) cell.classList.add('current');
         cell.innerHTML += `${h.toString().padStart(2, '0')}-${(h+1).toString().padStart(2, '0')}`;
         gridEl.appendChild(cell);
