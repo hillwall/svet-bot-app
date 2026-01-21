@@ -157,7 +157,10 @@
       });
     }
 
-    window.onload = () => loadData(0);
+    window.onload = () => {
+  loadData(0);
+  tg.ready(); // Повідомляємо Telegram, що додаток готовий до роботи
+};
   </script>
 </body>
 </html>
