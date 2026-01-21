@@ -57,53 +57,84 @@
     const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "197183975";
     let currentOffset = 0;
 
-    async function loadData(offset) {
+async function loadData(offset) {
+  // 1. Оновлюємо поточний стан та UI
   currentOffset = offset;
-  document.getElementById('grid').innerHTML = ""; 
-  document.getElementById('status').innerText = "";
-  document.getElementById('loader').style.display = "block";
+  const gridEl = document.getElementById('grid');
+  const statusEl = document.getElementById('status');
+  const loaderEl = document.getElementById('loader');
+
+  // 2. Очищаємо все старе ПЕРЕД запитом, щоб не було дублювання
+  gridEl.innerHTML = ""; 
+  statusEl.innerText = "";
+  loaderEl.style.display = "block";
+
+  // 3. Візуально перемикаємо вкладки
   document.getElementById('tab0').classList.toggle('active', offset === 0);
   document.getElementById('tab1').classList.toggle('active', offset === 1);
   
   try {
+    // Формуємо URL з параметрами для GAS
     const finalUrl = `${WEB_APP_URL}?action=getSchedule&chatId=${userId}&offset=${offset}`;
     
-    // Додаємо { redirect: 'follow' } - це критично для Google скриптів
+    // Виконуємо запит з обробкою перенаправлень Google
     const response = await fetch(finalUrl, { 
       method: 'GET',
       redirect: 'follow' 
     });
     
-    if (!response.ok) throw new Error('Мережева помилка');
+    if (!response.ok) throw new Error('Помилка сервера: ' + response.status);
     
     const data = await response.json();
+    
+    // Викликаємо функцію малювання (вона заповнить порожній grid новими даними)
     render(data);
+
   } catch (err) {
-    console.error(err);
-    document.getElementById('status').innerHTML = `<span style="color:red">Помилка зв'язку. Спробуйте ще раз.</span>`;
+    console.error("Помилка завантаження:", err);
+    statusEl.innerHTML = `<span style="color:var(--red); font-weight:bold;">⚠️ Помилка зв'язку. Спробуйте оновити сторінку.</span>`;
   } finally {
-    document.getElementById('loader').style.display = "none";
-  }
-}
-    async function changeQueue() {
-  const newQ = document.getElementById('q-select').value;
-  tg.HapticFeedback.impactOccurred('light');
-  
-  try {
-    const saveUrl = `${WEB_APP_URL}?action=saveQueue&chatId=${userId}&queue=${newQ}`;
-    await fetch(saveUrl, { method: 'GET', redirect: 'follow' });
-    loadData(currentOffset);
-  } catch (err) {
-    console.error(err);
+    // Прибираємо напис про завантаження у будь-якому випадку
+    loaderEl.style.display = "none";
   }
 }
 
+async function changeQueue() {
+  const qSelect = document.getElementById('q-select');
+  const newQ = qSelect.value;
+  
+  // Додаємо вібровідгук для приємного відчуття роботи додатка
+  tg.HapticFeedback.impactOccurred('medium');
+  
+  try {
+    // Показуємо користувачу, що процес пішов (можна через статус)
+    document.getElementById('status').innerText = "Зберігаємо чергу...";
+    
+    const saveUrl = `${WEB_APP_URL}?action=saveQueue&chatId=${userId}&queue=${newQ}`;
+    
+    const response = await fetch(saveUrl, { 
+      method: 'GET', 
+      redirect: 'follow' 
+    });
+
+    if (!response.ok) throw new Error('Не вдалося зберегти');
+
+    // Після успішного збереження перевантажуємо дані для цієї черги
+    loadData(currentOffset);
+
+  } catch (err) {
+    console.error("Помилка збереження:", err);
+    alert("Помилка при зміні черги. Перевірте з'єднання.");
+  }
+}
     function render(data) {
       const statusEl = document.getElementById('status');
       const gridEl = document.getElementById('grid');
       const dateEl = document.getElementById('date-label');
       const qSelect = document.getElementById('q-select');
 
+      gridEl.innerHTML = ""; // Очищаємо сітку від старих годин
+      
       if (data.error) {
         statusEl.innerHTML = `<span style="color:var(--red); font-weight:bold;">${data.error}</span>`;
         if (data.date) dateEl.innerText = data.date;
