@@ -58,35 +58,45 @@
     let currentOffset = 0;
 
     async function loadData(offset) {
-      currentOffset = offset;
-      document.getElementById('grid').innerHTML = ""; 
-      document.getElementById('status').innerText = "";
-      document.getElementById('loader').style.display = "block";
-      document.getElementById('tab0').classList.toggle('active', offset === 0);
-      document.getElementById('tab1').classList.toggle('active', offset === 1);
-      
-      try {
-        const response = await fetch(`${WEB_APP_URL}?action=getSchedule&chatId=${userId}&offset=${offset}`);
-        const data = await response.json();
-        render(data);
-      } catch (err) {
-        document.getElementById('status').innerText = "Помилка зв'язку з сервером.";
-      } finally {
-        document.getElementById('loader').style.display = "none";
-      }
-    }
-
+  currentOffset = offset;
+  document.getElementById('grid').innerHTML = ""; 
+  document.getElementById('status').innerText = "";
+  document.getElementById('loader').style.display = "block";
+  document.getElementById('tab0').classList.toggle('active', offset === 0);
+  document.getElementById('tab1').classList.toggle('active', offset === 1);
+  
+  try {
+    const finalUrl = `${WEB_APP_URL}?action=getSchedule&chatId=${userId}&offset=${offset}`;
+    
+    // Додаємо { redirect: 'follow' } - це критично для Google скриптів
+    const response = await fetch(finalUrl, { 
+      method: 'GET',
+      redirect: 'follow' 
+    });
+    
+    if (!response.ok) throw new Error('Мережева помилка');
+    
+    const data = await response.json();
+    render(data);
+  } catch (err) {
+    console.error(err);
+    document.getElementById('status').innerHTML = `<span style="color:red">Помилка зв'язку. Спробуйте ще раз.</span>`;
+  } finally {
+    document.getElementById('loader').style.display = "none";
+  }
+}
     async function changeQueue() {
-      const newQ = document.getElementById('q-select').value;
-      tg.HapticFeedback.impactOccurred('light');
-      
-      try {
-        await fetch(`${WEB_APP_URL}?action=saveQueue&chatId=${userId}&queue=${newQ}`);
-        loadData(currentOffset);
-      } catch (err) {
-        alert("Не вдалося зберегти чергу.");
-      }
-    }
+  const newQ = document.getElementById('q-select').value;
+  tg.HapticFeedback.impactOccurred('light');
+  
+  try {
+    const saveUrl = `${WEB_APP_URL}?action=saveQueue&chatId=${userId}&queue=${newQ}`;
+    await fetch(saveUrl, { method: 'GET', redirect: 'follow' });
+    loadData(currentOffset);
+  } catch (err) {
+    console.error(err);
+  }
+}
 
     function render(data) {
       const statusEl = document.getElementById('status');
