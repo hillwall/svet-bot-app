@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Налаштування графіка</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -14,265 +13,135 @@
             --btn-text: var(--tg-theme-button-text-color, #ffffff);
             --secondary: var(--tg-theme-secondary-bg-color, #f0f2f5);
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        h3 { margin-top: 0; font-size: 18px; }
-
+        body { font-family: sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; }
         .form-group { margin-bottom: 20px; }
-        
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-size: 14px; 
-            color: var(--hint); 
-            font-weight: 500;
-        }
-
-        select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid #ccc;
-            background-color: var(--secondary);
-            color: var(--text);
-            font-size: 16px;
-            appearance: none;
-            outline: none;
-        }
-
-        select:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn {
-            background-color: var(--btn-bg);
-            color: var(--btn-text);
-            border: none;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-            transition: opacity 0.2s;
-        }
-
-        .btn:disabled { opacity: 0.6; }
-
-        .loader {
-            font-size: 12px;
-            color: var(--btn-bg);
-            margin-top: 6px;
-            display: none;
-        }
-
-        /* Стилізація для випадаючого списку (стрілочка) */
-        .select-wrapper { position: relative; }
-        .select-wrapper::after {
-            content: "▼";
-            font-size: 12px;
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            pointer-events: none;
-            opacity: 0.5;
-        }
+        label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--hint); }
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; background: var(--secondary); color: var(--text); font-size: 16px; }
+        select:disabled { opacity: 0.5; }
+        .btn { background: var(--btn-bg); color: var(--btn-text); border: none; padding: 16px; border-radius: 12px; font-size: 16px; width: 100%; font-weight: bold; cursor: pointer; }
+        .loader { font-size: 12px; color: var(--btn-bg); display: none; margin-top: 5px; }
     </style>
 </head>
 <body>
-
     <div id="app">
         <h3>📍 Налаштування локації</h3>
-
         <div class="form-group">
             <label>1. Область:</label>
-            <div class="select-wrapper">
-                <select id="region" onchange="onRegionChange()">
-                    <option value="">Завантаження...</option>
-                </select>
-            </div>
+            <select id="region" onchange="onRegionChange()"><option value="">Завантаження...</option></select>
         </div>
-
         <div class="form-group">
             <label>2. Місто / Район:</label>
-            <div class="select-wrapper">
-                <select id="city" disabled onchange="onCityChange()">
-                    <option value="">Спочатку оберіть область</option>
-                </select>
-            </div>
+            <select id="city" disabled onchange="onCityChange()"><option value="">Оберіть область</option></select>
             <div id="city-loader" class="loader">Шукаємо міста...</div>
         </div>
-
         <div class="form-group">
             <label>3. Черга / Вулиця:</label>
-            <div class="select-wrapper">
-                <select id="queue" disabled onchange="onQueueChange()">
-                    <option value="">Спочатку оберіть місто</option>
-                </select>
-            </div>
+            <select id="queue" disabled onchange="validate()"><option value="">Оберіть місто або область</option></select>
             <div id="queue-loader" class="loader">Шукаємо черги...</div>
         </div>
-
         <button id="save-btn" class="btn" disabled onclick="save()">Зберегти вибір</button>
     </div>
 
     <script>
-        // ТЕСТОВИЙ URL (Андрію, перевір чи він актуальний для твого GAS)
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
-        
         let tg = window.Telegram.WebApp;
-        tg.expand(); // Розгорнути на весь екран
+        tg.expand();
 
-        // 1. Ініціалізація областей
         async function init() {
-            try {
-                const res = await fetch(`${WEB_APP_URL}?action=getRegions`);
-                const regions = await res.json();
-                const sel = document.getElementById('region');
-                sel.innerHTML = '<option value="">-- Оберіть область --</option>';
-                regions.forEach(r => {
-                    sel.innerHTML += `<option value="${r.url}">${r.name}</option>`;
-                });
-            } catch (e) {
-                alert("Помилка з'єднання зі скриптом.");
-            }
+            const res = await fetch(`${WEB_APP_URL}?action=getRegions`);
+            const data = await res.json();
+            const sel = document.getElementById('region');
+            sel.innerHTML = '<option value="">-- Оберіть область --</option>';
+            data.forEach(r => sel.innerHTML += `<option value="${r.url}">${r.name}</option>`);
         }
 
-        // 2. Коли змінили область
         async function onRegionChange() {
             const url = document.getElementById('region').value;
             const citySel = document.getElementById('city');
             const queueSel = document.getElementById('queue');
-            const saveBtn = document.getElementById('save-btn');
-
-            // Скидання
+            
             citySel.innerHTML = '<option value="">Завантаження...</option>';
             citySel.disabled = true;
-            queueSel.innerHTML = '<option value="">Спочатку оберіть місто</option>';
+            queueSel.innerHTML = '<option value="">Шукаємо черги...</option>';
             queueSel.disabled = true;
-            saveBtn.disabled = !url;
 
             if (!url) return;
-
             document.getElementById('city-loader').style.display = 'block';
-            
-            try {
-                const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
-                const data = await res.json();
 
-                // Фільтруємо: Тільки МІСТА (isQueue: false)
-                const cities = data.filter(item => !item.isQueue);
-                // Фільтруємо: Тільки ЧЕРГИ (isQueue: true)
-                const queues = data.filter(item => item.isQueue);
+            const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
+            const data = await res.json();
 
-                if (cities.length > 0) {
-                    citySel.innerHTML = '<option value="">-- Оберіть місто --</option>';
-                    cities.forEach(c => citySel.innerHTML += `<option value="${c.url}">${c.name}</option>`);
-                    citySel.disabled = false;
-                    
-                    // Якщо в цій області є і черги прямо в корені (як варіант)
-                    if (queues.length > 0) {
-                        queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
-                        queues.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
-                        queueSel.disabled = false;
-                    }
-                } else if (queues.length > 0) {
-                    // Якщо міст немає, а черги є — пропускаємо крок 2
-                    citySel.innerHTML = '<option value="">Міста відсутні</option>';
-                    queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
-                    queues.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
-                    queueSel.disabled = false;
-                } else {
-                    citySel.innerHTML = '<option value="">Нічого не знайдено</option>';
-                }
-            } catch (e) {
-                alert("Помилка парсингу міст.");
-            } finally {
-                document.getElementById('city-loader').style.display = 'none';
+            // Фільтруємо отримані дані
+            const cities = data.filter(item => !item.isQueue);
+            const queues = data.filter(item => item.isQueue);
+
+            // Заповнюємо міста
+            if (cities.length > 0) {
+                citySel.innerHTML = '<option value="">-- Оберіть місто --</option>';
+                cities.forEach(c => citySel.innerHTML += `<option value="${c.url}">${c.name}</option>`);
+                citySel.disabled = false;
+            } else {
+                citySel.innerHTML = '<option value="">Міст не знайдено</option>';
             }
+
+            // Заповнюємо черги (якщо вони є прямо в області)
+            if (queues.length > 0) {
+                queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
+                queues.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
+                queueSel.disabled = false;
+            } else {
+                queueSel.innerHTML = '<option value="">Оберіть місто спочатку</option>';
+            }
+
+            document.getElementById('city-loader').style.display = 'none';
+            validate();
         }
 
-        // 3. Коли змінили місто
         async function onCityChange() {
             const url = document.getElementById('city').value;
             const queueSel = document.getElementById('queue');
-
-            queueSel.innerHTML = '<option value="">Завантаження...</option>';
-            queueSel.disabled = true;
-
             if (!url) return;
 
+            queueSel.innerHTML = '<option value="">Завантаження черг...</option>';
+            queueSel.disabled = true;
             document.getElementById('queue-loader').style.display = 'block';
-            
-            try {
-                const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
-                const data = await res.json();
 
-                // Тут беремо все, що повернув сайт для міста (зазвичай це вже черги або вулиці)
-                if (data.length > 0) {
-                    queueSel.innerHTML = '<option value="">-- Оберіть чергу/вулицю --</option>';
-                    data.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
-                    queueSel.disabled = false;
-                } else {
-                    queueSel.innerHTML = '<option value="">Черг не знайдено</option>';
-                }
-            } catch (e) {
-                alert("Помилка парсингу черг.");
-            } finally {
-                document.getElementById('queue-loader').style.display = 'none';
+            const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
+            const data = await res.json();
+
+            if (data.length > 0) {
+                queueSel.innerHTML = '<option value="">-- Оберіть чергу/вулицю --</option>';
+                data.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
+                queueSel.disabled = false;
+            } else {
+                queueSel.innerHTML = '<option value="">Черг не знайдено</option>';
             }
+            document.getElementById('queue-loader').style.display = 'none';
+            validate();
         }
 
-        function onQueueChange() {
-            // Можна додати додаткову логіку при виборі черги
+        function validate() {
+            const region = document.getElementById('region').value;
+            document.getElementById('save-btn').disabled = !region;
         }
 
-        // 4. Збереження вибору
         async function save() {
             const region = document.getElementById('region');
             const city = document.getElementById('city');
             const queue = document.getElementById('queue');
             
-            // Пріоритет вибору: Черга -> Місто -> Область
             const finalUrl = queue.value || city.value || region.value;
             const finalName = queue.selectedOptions[0]?.text || city.selectedOptions[0]?.text || region.selectedOptions[0]?.text;
-
             const chatId = tg.initDataUnsafe.user?.id || "197183975";
-            const btn = document.getElementById('save-btn');
-            
-            btn.disabled = true;
-            btn.innerText = "Збереження...";
 
-            try {
-                const saveUrl = `${WEB_APP_URL}?action=saveSelection&chatId=${chatId}&url=${encodeURIComponent(finalUrl)}&name=${encodeURIComponent(finalName)}`;
-                const response = await fetch(saveUrl);
-                if (response.ok) {
-                    tg.close();
-                } else {
-                    alert("Сервер не зміг зберегти дані.");
-                    btn.disabled = false;
-                    btn.innerText = "Зберегти вибір";
-                }
-            } catch (e) {
-                alert("Помилка мережі.");
-                btn.disabled = false;
-                btn.innerText = "Зберегти вибір";
-            }
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true;
+            btn.innerText = "Зберігаємо...";
+
+            await fetch(`${WEB_APP_URL}?action=saveSelection&chatId=${chatId}&url=${encodeURIComponent(finalUrl)}&name=${encodeURIComponent(finalName)}`);
+            tg.close();
         }
 
-        // Старт
         init();
     </script>
 </body>
