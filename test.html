@@ -13,32 +13,37 @@
             --btn-text: var(--tg-theme-button-text-color, #ffffff);
             --secondary: var(--tg-theme-secondary-bg-color, #f0f2f5);
         }
-        body { font-family: sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--hint); }
-        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; background: var(--secondary); color: var(--text); font-size: 16px; }
-        select:disabled { opacity: 0.5; }
-        .btn { background: var(--btn-bg); color: var(--btn-text); border: none; padding: 16px; border-radius: 12px; font-size: 16px; width: 100%; font-weight: bold; cursor: pointer; }
-        .loader { font-size: 12px; color: var(--btn-bg); display: none; margin-top: 5px; }
+        body { font-family: sans-serif; background-color: var(--bg); color: var(--text); padding: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 13px; color: var(--hint); font-weight: bold; }
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; background: var(--secondary); color: var(--text); font-size: 16px; outline: none; }
+        select:disabled { opacity: 0.4; }
+        .btn { background: var(--btn-bg); color: var(--btn-text); border: none; padding: 16px; border-radius: 12px; font-size: 16px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn:disabled { background: #ccc; color: #888; cursor: not-allowed; }
+        .loader { font-size: 12px; color: var(--btn-bg); display: none; margin-bottom: 5px; }
     </style>
 </head>
 <body>
     <div id="app">
-        <h3>📍 Налаштування локації</h3>
+        <h3 style="margin-top:0">📍 Налаштування</h3>
+        
         <div class="form-group">
-            <label>1. Область:</label>
+            <label>1. ОБЛАСТЬ</label>
             <select id="region" onchange="onRegionChange()"><option value="">Завантаження...</option></select>
         </div>
+
         <div class="form-group">
-            <label>2. Місто / Район:</label>
-            <select id="city" disabled onchange="onCityChange()"><option value="">Оберіть область</option></select>
+            <label>2. МІСТО / РАЙОН</label>
             <div id="city-loader" class="loader">Шукаємо міста...</div>
+            <select id="city" disabled onchange="onCityChange()"><option value="">Оберіть область</option></select>
         </div>
+
         <div class="form-group">
-            <label>3. Черга / Вулиця:</label>
-            <select id="queue" disabled onchange="validate()"><option value="">Оберіть місто або область</option></select>
+            <label>3. ЧЕРГА / ВУЛИЦЯ (Обов'язково)</label>
             <div id="queue-loader" class="loader">Шукаємо черги...</div>
+            <select id="queue" disabled onchange="validate()"><option value="">Оберіть локацію</option></select>
         </div>
+
         <button id="save-btn" class="btn" disabled onclick="save()">Зберегти вибір</button>
     </div>
 
@@ -48,11 +53,13 @@
         tg.expand();
 
         async function init() {
-            const res = await fetch(`${WEB_APP_URL}?action=getRegions`);
-            const data = await res.json();
-            const sel = document.getElementById('region');
-            sel.innerHTML = '<option value="">-- Оберіть область --</option>';
-            data.forEach(r => sel.innerHTML += `<option value="${r.url}">${r.name}</option>`);
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getRegions`);
+                const data = await res.json();
+                const sel = document.getElementById('region');
+                sel.innerHTML = '<option value="">-- Оберіть область --</option>';
+                data.forEach(r => sel.innerHTML += `<option value="${r.url}">${r.name}</option>`);
+            } catch (e) { alert("Помилка ініціалізації"); }
         }
 
         async function onRegionChange() {
@@ -60,41 +67,38 @@
             const citySel = document.getElementById('city');
             const queueSel = document.getElementById('queue');
             
+            // Скидання всього
             citySel.innerHTML = '<option value="">Завантаження...</option>';
             citySel.disabled = true;
-            queueSel.innerHTML = '<option value="">Шукаємо черги...</option>';
+            queueSel.innerHTML = '<option value="">Чекаємо вибору...</option>';
             queueSel.disabled = true;
+            validate();
 
             if (!url) return;
             document.getElementById('city-loader').style.display = 'block';
 
-            const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
-            const data = await res.json();
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+                
+                const cities = data.filter(item => !item.isQueue);
+                const queues = data.filter(item => item.isQueue);
 
-            // Фільтруємо отримані дані
-            const cities = data.filter(item => !item.isQueue);
-            const queues = data.filter(item => item.isQueue);
+                if (cities.length > 0) {
+                    citySel.innerHTML = '<option value="">-- Оберіть місто --</option>';
+                    cities.forEach(c => citySel.innerHTML += `<option value="${c.url}">${c.name}</option>`);
+                    citySel.disabled = false;
+                } else {
+                    citySel.innerHTML = '<option value="">Міст не знайдено</option>';
+                }
 
-            // Заповнюємо міста
-            if (cities.length > 0) {
-                citySel.innerHTML = '<option value="">-- Оберіть місто --</option>';
-                cities.forEach(c => citySel.innerHTML += `<option value="${c.url}">${c.name}</option>`);
-                citySel.disabled = false;
-            } else {
-                citySel.innerHTML = '<option value="">Міст не знайдено</option>';
-            }
-
-            // Заповнюємо черги (якщо вони є прямо в області)
-            if (queues.length > 0) {
-                queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
-                queues.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
-                queueSel.disabled = false;
-            } else {
-                queueSel.innerHTML = '<option value="">Оберіть місто спочатку</option>';
-            }
-
-            document.getElementById('city-loader').style.display = 'none';
-            validate();
+                if (queues.length > 0) {
+                    queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
+                    queues.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
+                    queueSel.disabled = false;
+                }
+            } catch (e) { alert("Помилка завантаження"); }
+            finally { document.getElementById('city-loader').style.display = 'none'; }
         }
 
         async function onCityChange() {
@@ -106,32 +110,32 @@
             queueSel.disabled = true;
             document.getElementById('queue-loader').style.display = 'block';
 
-            const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
-            const data = await res.json();
-
-            if (data.length > 0) {
-                queueSel.innerHTML = '<option value="">-- Оберіть чергу/вулицю --</option>';
-                data.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
-                queueSel.disabled = false;
-            } else {
-                queueSel.innerHTML = '<option value="">Черг не знайдено</option>';
-            }
-            document.getElementById('queue-loader').style.display = 'none';
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+                
+                if (data.length > 0) {
+                    queueSel.innerHTML = '<option value="">-- Оберіть чергу/вулицю --</option>';
+                    data.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
+                    queueSel.disabled = false;
+                } else {
+                    queueSel.innerHTML = '<option value="">Черг не знайдено</option>';
+                }
+            } catch (e) { alert("Помилка завантаження черг"); }
+            finally { document.getElementById('queue-loader').style.display = 'none'; }
             validate();
         }
 
         function validate() {
-            const region = document.getElementById('region').value;
-            document.getElementById('save-btn').disabled = !region;
+            const queueValue = document.getElementById('queue').value;
+            // Кнопка активна ТІЛЬКИ якщо обрана черга/вулиця
+            document.getElementById('save-btn').disabled = (queueValue === "");
         }
 
         async function save() {
-            const region = document.getElementById('region');
-            const city = document.getElementById('city');
             const queue = document.getElementById('queue');
-            
-            const finalUrl = queue.value || city.value || region.value;
-            const finalName = queue.selectedOptions[0]?.text || city.selectedOptions[0]?.text || region.selectedOptions[0]?.text;
+            const finalUrl = queue.value;
+            const finalName = queue.selectedOptions[0]?.text;
             const chatId = tg.initDataUnsafe.user?.id || "197183975";
 
             const btn = document.getElementById('save-btn');
