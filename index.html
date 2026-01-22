@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Світло Вінниця</title>
+  <!-- Підключення SDK Telegram -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -12,104 +12,300 @@
       --text: var(--tg-theme-text-color, #222);
       --hint: var(--tg-theme-hint-color, #777);
       --accent: #2481cc;
-      --color-dark: #00193a;
+      
+      /* Кольорова палітра графіка */
+      --color-light: #e6e6a1; /* Світло є */
+      --color-dark: #00193a;  /* Світла немає */
+      --white: #ffffff;
     }
-    body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 15px; margin: 0; }
-    .card { background: var(--card); border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
-    .status-on { color: #2ecc71; font-weight: bold; }
-    .status-off { color: #e74c3c; font-weight: bold; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
-    .hour { padding: 10px 5px; text-align: center; border-radius: 8px; font-size: 12px; background: #eee; border: 1px solid #ddd; }
-    .off-full { background: var(--color-dark); color: white; border-color: var(--color-dark); }
-    .off-left { background: linear-gradient(90deg, var(--color-dark) 50%, #eee 50%); }
-    .off-right { background: linear-gradient(90deg, #eee 50%, var(--color-dark) 50%); }
-    .current { border: 2px solid var(--accent); transform: scale(1.05); font-weight: bold; }
-    .btn-row { display: flex; gap: 10px; margin-bottom: 15px; }
-    button { flex: 1; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: white; font-weight: bold; }
-    button.inactive { opacity: 0.5; }
-    .loader { text-align: center; padding: 40px; font-style: italic; color: var(--hint); }
-    .error-box { background: #fff5f5; color: #e74c3c; padding: 15px; border-radius: 10px; border: 1px solid #ffc1c1; text-align: center; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Заголовок */
+    .header-row { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 12px; 
+    }
+    .title { font-size: 20px; font-weight: 700; }
+    .queue-badge { 
+      background: var(--accent); 
+      color: white; 
+      padding: 4px 12px; 
+      border-radius: 20px; 
+      font-size: 14px; 
+      font-weight: 600; 
+    }
+
+    /* Вкладки */
+    .tabs { 
+      display: flex; 
+      background: var(--card); 
+      border-radius: 10px; 
+      padding: 4px; 
+      margin-bottom: 16px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+    }
+    .tab { 
+      flex: 1; 
+      padding: 8px; 
+      text-align: center; 
+      border-radius: 8px; 
+      font-size: 14px; 
+      font-weight: 500; 
+      cursor: pointer; 
+      transition: 0.2s; 
+      color: var(--hint); 
+    }
+    .tab.active { 
+      background: var(--accent); 
+      color: white; 
+      box-shadow: 0 2px 4px rgba(36,129,204,0.3); 
+    }
+
+    /* Картка статусу */
+    .status-card { 
+      background: var(--card); 
+      border-radius: 12px; 
+      padding: 16px; 
+      margin-bottom: 16px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
+    }
+    .status-title { 
+      font-size: 12px; 
+      color: var(--hint); 
+      margin-bottom: 6px; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+    }
+    .status-text { 
+      font-size: 16px; 
+      line-height: 1.5; 
+      font-weight: 500; 
+    }
+    .status-on { color: #2ecc71; }
+    .status-off { color: #e74c3c; }
+
+    /* Сітка годин */
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(4, 1fr); 
+      gap: 8px; 
+    }
+    .hour {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-light);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      border: 1px solid rgba(0,0,0,0.05);
+      position: relative;
+    }
+
+    /* Стани вимкнень (градієнти) */
+    .hour.off-full { background: var(--color-dark); color: white; }
+    .hour.off-left { 
+      background: linear-gradient(90deg, var(--color-dark) 50%, var(--color-light) 50%); 
+      color: white; 
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    }
+    .hour.off-right { 
+      background: linear-gradient(90deg, var(--color-light) 50%, var(--color-dark) 50%); 
+      color: white; 
+      text-shadow: -1px 1px 2px rgba(0,0,0,0.8);
+    }
+
+    /* Поточна година */
+    .hour.current { 
+      border: 2.5px solid var(--accent); 
+      box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); 
+      z-index: 1; 
+      transform: scale(1.02);
+    }
+
+    /* Лоадер */
+    .loader { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      flex: 1; 
+      color: var(--hint); 
+      padding-top: 50px;
+    }
+    .spinner { 
+      width: 32px; 
+      height: 32px; 
+      border: 3px solid rgba(36,129,204,0.2); 
+      border-top-color: var(--accent); 
+      border-radius: 50%; 
+      animation: spin 0.8s linear infinite; 
+      margin-bottom: 16px; 
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg { color: #e74c3c; text-align: center; padding: 20px; font-weight: 500; }
   </style>
 </head>
 <body>
-  <div id="app">
-    <div class="loader">Ініціалізація...</div>
+  <!-- Екран завантаження -->
+  <div id="loader" class="loader">
+    <div class="spinner"></div>
+    Отримання графіка...
+  </div>
+
+  <!-- Основний контент -->
+  <div id="content" style="display:none">
+    <div class="header-row">
+      <div class="title">Світло Вінниця</div>
+      <div id="queue-badge" class="queue-badge">Черга ...</div>
+    </div>
+    
+    <div class="tabs">
+      <div id="tab-today" class="tab active" onclick="switchDay(0)">Сьогодні</div>
+      <div id="tab-tomorrow" class="tab" onclick="switchDay(1)">Завтра</div>
+    </div>
+
+    <div class="status-card">
+      <div id="status-date" class="status-title">Дата</div>
+      <div id="status-text" class="status-text">Оновлення...</div>
+    </div>
+
+    <div id="grid" class="grid"></div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
-    
-    // ВАЖЛИВО: ЗАМІНИ НА СВОЄ НОВЕ ПОСИЛАННЯ ПІСЛЯ NEW DEPLOYMENT
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbzJieO6MQN5NjOJJHUzauaUfCDx-sP8S_9tY_y5KPu-vxb7AX113hjccEFxzooS10fX5g/exec"; 
+    tg.ready();
 
+    // Отримання ID користувача з Telegram або тестовий ID
     const chatId = tg.initDataUnsafe?.user?.id || "197183975";
+    let currentOffset = 0;
 
-    async function callApi(action, params = {}) {
-      const query = new URLSearchParams({ action, chatId, ...params }).toString();
-      const response = await fetch(`${webAppUrl}?${query}`);
-      if (!response.ok) throw new Error("Сервер GAS не відповів");
-      return await response.json();
-    }
-
-    async function init(offset = 0) {
-      const app = document.getElementById('app');
-      app.innerHTML = '<div class="loader">Оновлення даних...</div>';
+    // Перемикання між Сьогодні/Завтра
+    function switchDay(offset) {
+      if (currentOffset === offset) return;
+      currentOffset = offset;
       
-      try {
-        const data = await callApi('getData', { offset });
-        if (data.error) {
-          app.innerHTML = `<div class="error-box"><b>📍 Черга ${data.queue || '?'}</b><br><br>${data.error}</div>`;
-          return;
-        }
-        render(data);
-      } catch (e) {
-        app.innerHTML = `<div class="error-box">Помилка зв'язку.<br><small>${e.message}</small><br><br>Перевір чи правильно вказано Web App URL та чи зроблено New Deployment.</div>`;
-      }
+      document.getElementById('tab-today').classList.toggle('active', offset === 0);
+      document.getElementById('tab-tomorrow').classList.toggle('active', offset === 1);
+      
+      loadData();
     }
 
-    function render(data) {
-      const app = document.getElementById('app');
-      let html = `
-        <div class="btn-row">
-          <button onclick="init(0)" class="${data.isTomorrow ? 'inactive' : ''}">Сьогодні</button>
-          <button onclick="init(1)" class="${data.isTomorrow ? '' : 'inactive'}">Завтра</button>
-        </div>
-        <div class="card">
-          <div style="font-size: 18px; margin-bottom: 8px;">📍 Черга <b>${data.queue}</b></div>
-          <div style="color: var(--hint); font-size: 14px; margin-bottom: 12px;">📅 ${data.date}</div>
-          <div class="${data.status.includes('ВІДСУТНЄ') ? 'status-off' : 'status-on'}">${data.status}</div>
-        </div>
-        <div class="grid">
-      `;
+    // Запит даних із сервера Google Apps Script
+    function loadData() {
+      document.getElementById('loader').style.display = 'flex';
+      document.getElementById('content').style.display = 'none';
+      
+      google.script.run
+        .withSuccessHandler(renderData)
+        .withFailureHandler(showError)
+        .getDataForMiniApp(chatId, currentOffset);
+    }
 
+    // Відтворення отриманих даних
+    function renderData(data) {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+
+      if (data.error) {
+        showError(data.error);
+        return;
+      }
+
+      document.getElementById('queue-badge').innerText = `Черга ${data.queue}`;
+      document.getElementById('status-date').innerText = data.date;
+      
+      const statusEl = document.getElementById('status-text');
+      statusEl.innerHTML = data.status || "Графік відсутній";
+      
+      // Динамічний колір тексту статусу
+      statusEl.classList.remove('status-on', 'status-off');
+      if (data.status.includes("ВІДСУТНЄ")) {
+        statusEl.classList.add('status-off');
+      } else if (data.status.includes("Є (по графіку)")) {
+        statusEl.classList.add('status-on');
+      }
+
+      const gridEl = document.getElementById('grid');
+      gridEl.innerHTML = '';
       const nowH = new Date().getHours();
+
+      // Генерація 24 годин
       for (let h = 0; h < 24; h++) {
-        const first = isOff(h, 15, data.slots);
-        const second = isOff(h, 45, data.slots);
-        let cls = 'hour';
-        if (first && second) cls += ' off-full';
-        else if (first) cls += ' off-left';
-        else if (second) cls += ' off-right';
-        if (h === nowH && !data.isTomorrow) cls += ' current';
-        html += `<div class="${cls}">${h < 10 ? '0'+h : h}:00</div>`;
+        const cell = document.createElement('div');
+        
+        // Перевіряємо перші та другі 30 хвилин години
+        const firstHalfOff = isTimeOff(h, 15, data.slots);
+        const secondHalfOff = isTimeOff(h, 45, data.slots);
+
+        if (firstHalfOff && secondHalfOff) {
+          cell.className = 'hour off-full';
+        } else if (firstHalfOff) {
+          cell.className = 'hour off-left';
+        } else if (secondHalfOff) {
+          cell.className = 'hour off-right';
+        } else {
+          cell.className = 'hour';
+        }
+
+        // Підсвітка поточної години тільки для вкладки "Сьогодні"
+        if (h === nowH && currentOffset === 0) {
+          cell.classList.add('current');
+        }
+        
+        cell.innerText = `${h.toString().padStart(2, '0')}-${(h+1).toString().padStart(2, '0')}`;
+        gridEl.appendChild(cell);
       }
-      html += `</div>`;
-      app.innerHTML = html;
     }
 
-    function isOff(h, m, slots) {
-      const time = h * 60 + m;
+    // Логіка перевірки: чи вимкнено світло в конкретний момент (хвилину)
+    function isTimeOff(h, m, slots) {
+      if (!slots) return false;
+      const checkMinutes = h * 60 + m;
+      
       return slots.some(s => {
         if (!s.isOutage) return false;
+        
         const [sh, sm] = s.start.split(':').map(Number);
         let [eh, em] = s.end.split(':').map(Number);
-        if (eh === 0 && em === 0) eh = 24;
-        return time >= (sh * 60 + sm) && time < (eh * 60 + em);
+        
+        const startTotal = sh * 60 + sm;
+        let endTotal = eh * 60 + em;
+        
+        // Якщо кінець 00:00 — це кінець доби (1440 хв)
+        if (eh === 0 && em === 0) endTotal = 1440;
+        
+        return checkMinutes >= startTotal && checkMinutes < endTotal;
       });
     }
 
-    window.onload = () => init(0);
+    function showError(err) {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      document.getElementById('status-text').innerHTML = `<div class="error-msg">⚠️ ${err}</div>`;
+      document.getElementById('grid').innerHTML = '';
+    }
+
+    // Початкове завантаження
+    window.onload = loadData;
   </script>
 </body>
 </html>
