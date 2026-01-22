@@ -1,44 +1,81 @@
-<div id="settings-view" style="display:none;">
-  <h3>⚙️ Налаштування регіону</h3>
-  
-  <label>Оберіть область:</label>
-  <select id="region-select" onchange="loadCities()">
-    <option value="">Завантаження...</option>
-  </select>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
+        select { width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px; }
+        .btn { background: #2481cc; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; cursor: pointer; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div id="setup">
+        <h3>📍 Налаштування локації</h3>
+        
+        <label>1. Область:</label>
+        <select id="region" onchange="loadNextLevel('region', 'city')">
+            <option>Завантаження областей...</option>
+        </select>
 
-  <label>Оберіть місто/чергу:</label>
-  <select id="city-select" disabled>
-    <option value="">Спочатку область</option>
-  </select>
+        <div id="city-container" class="hidden">
+            <label>2. Місто/Район:</label>
+            <select id="city" onchange="loadNextLevel('city', 'queue')">
+                <option value="">Оберіть місто</option>
+            </select>
+        </div>
 
-  <button onclick="saveSettings()" class="btn">Зберегти</button>
-</div>
+        <div id="queue-container" class="hidden">
+            <label>3. Черга/Вулиця:</label>
+            <select id="queue">
+                <option value="">Оберіть чергу</option>
+            </select>
+        </div>
 
-<script>
-let tg = window.Telegram.WebApp;
+        <button class="btn" onclick="save()">Зберегти вибір</button>
+    </div>
 
-async function loadRegions() {
-  const res = await fetch(`${WEB_APP_URL}?action=getRegions`);
-  const regions = await res.json();
-  const select = document.getElementById('region-select');
-  select.innerHTML = '<option value="">-- Оберіть --</option>';
-  regions.forEach(r => {
-    select.innerHTML += `<option value="${r.url}">${r.name}</option>`;
-  });
-}
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
+        let tg = window.Telegram.WebApp;
 
-// Функція для збереження вибору
-async function saveSettings() {
-  const url = document.getElementById('city-select').value || document.getElementById('region-select').value;
-  const chatId = tg.initDataUnsafe.user.id;
-  
-  await fetch(`${WEB_APP_URL}?action=saveSelection&chatId=${chatId}&url=${url}`);
-  tg.showAlert("Налаштування збережено!");
-  location.reload(); // Перезавантажуємо, щоб побачити новий графік
-}
+        // 1. Завантаження областей при старті
+        async function init() {
+            const res = await fetch(`${WEB_APP_URL}?action=getRegions`);
+            const data = await res.json();
+            const sel = document.getElementById('region');
+            sel.innerHTML = '<option value="">-- Оберіть область --</option>';
+            data.forEach(r => sel.innerHTML += `<option value="${r.url}">${r.name}</option>`);
+        }
 
-// При старті
-window.onload = () => {
-  loadRegions();
-};
-</script>
+        // 2. Динамічне завантаження наступних рівнів (місто -> черга)
+        async function loadNextLevel(currentId, nextId) {
+            const url = document.getElementById(currentId).value;
+            if (!url) return;
+
+            const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${url}`);
+            const data = await res.json();
+
+            if (data.length > 0) {
+                document.getElementById(`${nextId}-container`).classList.remove('hidden');
+                const sel = document.getElementById(nextId);
+                sel.innerHTML = `<option value="">-- Оберіть зі списку --</option>`;
+                data.forEach(item => sel.innerHTML += `<option value="${item.url}">${item.name}</option>`);
+            }
+        }
+
+        // 3. Збереження фінального результату
+        async function save() {
+            const q = document.getElementById('queue').value || document.getElementById('city').value || document.getElementById('region').value;
+            const name = document.getElementById('queue').selectedOptions[0]?.text || "Локація";
+            const chatId = tg.initDataUnsafe.user?.id || "197183975";
+
+            await fetch(`${WEB_APP_URL}?action=saveSelection&chatId=${chatId}&url=${encodeURIComponent(q)}&name=${encodeURIComponent(name)}`);
+            tg.close();
+        }
+
+        init();
+    </script>
+</body>
+</html>
