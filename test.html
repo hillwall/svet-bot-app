@@ -62,44 +62,44 @@
             } catch (e) { alert("Помилка ініціалізації"); }
         }
 
-        async function onRegionChange() {
-            const url = document.getElementById('region').value;
-            const citySel = document.getElementById('city');
-            const queueSel = document.getElementById('queue');
-            
-            // Скидання всього
-            citySel.innerHTML = '<option value="">Завантаження...</option>';
-            citySel.disabled = true;
-            queueSel.innerHTML = '<option value="">Чекаємо вибору...</option>';
-            queueSel.disabled = true;
-            validate();
+       async function onRegionChange() {
+    const url = document.getElementById('region').value;
+    const citySel = document.getElementById('city');
+    const queueSel = document.getElementById('queue');
+    
+    citySel.innerHTML = '<option value="">Завантаження...</option>';
+    citySel.disabled = true;
+    queueSel.innerHTML = '<option value="">Чекаємо...</option>';
+    queueSel.disabled = true;
 
-            if (!url) return;
-            document.getElementById('city-loader').style.display = 'block';
+    if (!url) return;
 
-            try {
-                const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
-                const data = await res.json();
-                
-                const cities = data.filter(item => !item.isQueue);
-                const queues = data.filter(item => item.isQueue);
+    // Отримуємо ВСІХ "дітей" області одним запитом до таблиці
+    const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
+    const data = await res.json();
 
-                if (cities.length > 0) {
-                    citySel.innerHTML = '<option value="">-- Оберіть місто --</option>';
-                    cities.forEach(c => citySel.innerHTML += `<option value="${c.url}">${c.name}</option>`);
-                    citySel.disabled = false;
-                } else {
-                    citySel.innerHTML = '<option value="">Міст не знайдено</option>';
-                }
+    const cities = data.filter(item => !item.isQueue);
+    const queues = data.filter(item => item.isQueue);
 
-                if (queues.length > 0) {
-                    queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
-                    queues.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
-                    queueSel.disabled = false;
-                }
-            } catch (e) { alert("Помилка завантаження"); }
-            finally { document.getElementById('city-loader').style.display = 'none'; }
-        }
+    // 1. Заповнюємо Міста
+    if (cities.length > 0) {
+        citySel.innerHTML = '<option value="">-- Оберіть місто --</option>';
+        cities.forEach(c => citySel.innerHTML += `<option value="${c.url}">${c.name}</option>`);
+        citySel.disabled = false;
+    } else {
+        citySel.innerHTML = '<option value="">Міст немає</option>';
+    }
+
+    // 2. Заповнюємо Черги (якщо вони є прямо в області)
+    if (queues.length > 0) {
+        queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
+        queues.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
+        queueSel.disabled = false;
+    } else {
+        queueSel.innerHTML = '<option value="">Оберіть місто</option>';
+    }
+    validate();
+}
 
         async function onCityChange() {
             const url = document.getElementById('city').value;
