@@ -1,0 +1,44 @@
+<div id="settings-view" style="display:none;">
+  <h3>⚙️ Налаштування регіону</h3>
+  
+  <label>Оберіть область:</label>
+  <select id="region-select" onchange="loadCities()">
+    <option value="">Завантаження...</option>
+  </select>
+
+  <label>Оберіть місто/чергу:</label>
+  <select id="city-select" disabled>
+    <option value="">Спочатку область</option>
+  </select>
+
+  <button onclick="saveSettings()" class="btn">Зберегти</button>
+</div>
+
+<script>
+let tg = window.Telegram.WebApp;
+
+async function loadRegions() {
+  const res = await fetch(`${WEB_APP_URL}?action=getRegions`);
+  const regions = await res.json();
+  const select = document.getElementById('region-select');
+  select.innerHTML = '<option value="">-- Оберіть --</option>';
+  regions.forEach(r => {
+    select.innerHTML += `<option value="${r.url}">${r.name}</option>`;
+  });
+}
+
+// Функція для збереження вибору
+async function saveSettings() {
+  const url = document.getElementById('city-select').value || document.getElementById('region-select').value;
+  const chatId = tg.initDataUnsafe.user.id;
+  
+  await fetch(`${WEB_APP_URL}?action=saveSelection&chatId=${chatId}&url=${url}`);
+  tg.showAlert("Налаштування збережено!");
+  location.reload(); // Перезавантажуємо, щоб побачити новий графік
+}
+
+// При старті
+window.onload = () => {
+  loadRegions();
+};
+</script>
