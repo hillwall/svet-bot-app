@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Графік світла Вінниця</title>
-  <!-- Офіційна бібліотека Telegram WebApp -->
+  <title>Світло Вінниця</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -13,152 +12,62 @@
       --text: var(--tg-theme-text-color, #222);
       --hint: var(--tg-theme-hint-color, #777);
       --accent: #2481cc;
-      --color-light: #e6e6a1;
       --color-dark: #00193a;
     }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: 15px;
-      margin: 0;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      margin-bottom: 15px;
-    }
-
+    body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 15px; margin: 0; }
+    .card { background: var(--card); border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
     .status-on { color: #2ecc71; font-weight: bold; }
     .status-off { color: #e74c3c; font-weight: bold; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-top: 15px;
-    }
-
-    .hour {
-      padding: 10px 5px;
-      text-align: center;
-      border-radius: 8px;
-      font-size: 12px;
-      background: #eee;
-      border: 1px solid #ddd;
-      color: #333;
-    }
-
-    /* Стилі для зафарбовування годин */
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
+    .hour { padding: 10px 5px; text-align: center; border-radius: 8px; font-size: 12px; background: #eee; border: 1px solid #ddd; }
     .off-full { background: var(--color-dark); color: white; border-color: var(--color-dark); }
-    .off-left { background: linear-gradient(90deg, var(--color-dark) 50%, #eee 50%); color: #333; }
-    .off-right { background: linear-gradient(90deg, #eee 50%, var(--color-dark) 50%); color: #333; }
-    
-    .current {
-      border: 2px solid var(--accent);
-      font-weight: bold;
-      transform: scale(1.05);
-      box-shadow: 0 0 5px rgba(36, 129, 204, 0.5);
-    }
-
-    .loader {
-      text-align: center;
-      padding: 50px 20px;
-      font-style: italic;
-      color: var(--hint);
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-
-    button {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      background: var(--accent);
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    button:active { opacity: 0.7; }
-    button.inactive { background: var(--hint); opacity: 0.5; }
-
-    .error {
-      background: #fff5f5;
-      color: #e74c3c;
-      text-align: center;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid #ffc1c1;
-    }
-    
-    small { display: block; margin-top: 10px; font-size: 11px; opacity: 0.7; }
+    .off-left { background: linear-gradient(90deg, var(--color-dark) 50%, #eee 50%); }
+    .off-right { background: linear-gradient(90deg, #eee 50%, var(--color-dark) 50%); }
+    .current { border: 2px solid var(--accent); transform: scale(1.05); font-weight: bold; }
+    .btn-row { display: flex; gap: 10px; margin-bottom: 15px; }
+    button { flex: 1; padding: 12px; border-radius: 10px; border: none; background: var(--accent); color: white; font-weight: bold; }
+    button.inactive { opacity: 0.5; }
+    .loader { text-align: center; padding: 40px; font-style: italic; color: var(--hint); }
+    .error-box { background: #fff5f5; color: #e74c3c; padding: 15px; border-radius: 10px; border: 1px solid #ffc1c1; text-align: center; }
   </style>
 </head>
 <body>
   <div id="app">
-    <div class="loader">Ініціалізація додатка...</div>
+    <div class="loader">Ініціалізація...</div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
     
-    // ВСТАВ СЮДИ СВОЄ ПОСИЛАННЯ НА WEB APP (DEPLOYMENT URL)
-    const webAppUrl = "ТУТ_ТВОЄ_ПОСИЛАННЯ_З_GOOGLE_APPS_SCRIPT"; 
+    // ВАЖЛИВО: ЗАМІНИ НА СВОЄ НОВЕ ПОСИЛАННЯ ПІСЛЯ NEW DEPLOYMENT
+    const webAppUrl = "ТУТ_ВСТАВ_ПОСИЛАННЯ_ЩО_ОТРИМАВ_ПІСЛЯ_DEPLOY"; 
 
-    // Отримання ID користувача
     const chatId = tg.initDataUnsafe?.user?.id || "197183975";
 
-    // Функція для запитів до API через fetch (CORS)
     async function callApi(action, params = {}) {
       const query = new URLSearchParams({ action, chatId, ...params }).toString();
-      const url = `${webAppUrl}?${query}`;
-      
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Помилка мережі");
+      const response = await fetch(`${webAppUrl}?${query}`);
+      if (!response.ok) throw new Error("Сервер GAS не відповів");
       return await response.json();
     }
 
-    // Завантаження даних
     async function init(offset = 0) {
       const app = document.getElementById('app');
-      app.innerHTML = '<div class="loader">Отримання даних із сервера...</div>';
+      app.innerHTML = '<div class="loader">Оновлення даних...</div>';
       
       try {
         const data = await callApi('getData', { offset });
         if (data.error) {
-          app.innerHTML = `
-            <div class="error">
-              <b>📍 Черга ${data.queue || 'не визначена'}</b><br><br>
-              ${data.error}
-            </div>`;
+          app.innerHTML = `<div class="error-box"><b>📍 Черга ${data.queue || '?'}</b><br><br>${data.error}</div>`;
           return;
         }
         render(data);
       } catch (e) {
-        app.innerHTML = `
-          <div class="error">
-            Помилка зв'язку з сервером Google.<br>
-            Переконайтеся, що ви зробили Deployment як "Anyone".
-            <small>${e.message}</small>
-          </div>`;
+        app.innerHTML = `<div class="error-box">Помилка зв'язку.<br><small>${e.message}</small><br><br>Перевір чи правильно вказано Web App URL та чи зроблено New Deployment.</div>`;
       }
     }
 
-    // Відображення інтерфейсу
     function render(data) {
       const app = document.getElementById('app');
       let html = `
@@ -167,7 +76,7 @@
           <button onclick="init(1)" class="${data.isTomorrow ? '' : 'inactive'}">Завтра</button>
         </div>
         <div class="card">
-          <div style="font-size: 18px; margin-bottom: 8px;">📍 Черга <b>${data.queue}</b> (Вінниця)</div>
+          <div style="font-size: 18px; margin-bottom: 8px;">📍 Черга <b>${data.queue}</b></div>
           <div style="color: var(--hint); font-size: 14px; margin-bottom: 12px;">📅 ${data.date}</div>
           <div class="${data.status.includes('ВІДСУТНЄ') ? 'status-off' : 'status-on'}">${data.status}</div>
         </div>
@@ -175,40 +84,31 @@
       `;
 
       const nowH = new Date().getHours();
-      
       for (let h = 0; h < 24; h++) {
-        const firstHalf = isOff(h, 15, data.slots);
-        const secondHalf = isOff(h, 45, data.slots);
-        
+        const first = isOff(h, 15, data.slots);
+        const second = isOff(h, 45, data.slots);
         let cls = 'hour';
-        if (firstHalf && secondHalf) cls += ' off-full';
-        else if (firstHalf) cls += ' off-left';
-        else if (secondHalf) cls += ' off-right';
-        
-        // Підсвічуємо поточну годину лише для вкладки "Сьогодні"
+        if (first && second) cls += ' off-full';
+        else if (first) cls += ' off-left';
+        else if (second) cls += ' off-right';
         if (h === nowH && !data.isTomorrow) cls += ' current';
-
         html += `<div class="${cls}">${h < 10 ? '0'+h : h}:00</div>`;
       }
-
       html += `</div>`;
       app.innerHTML = html;
     }
 
-    // Логіка перевірки чи вимкнено в конкретний час
     function isOff(h, m, slots) {
-      if (!slots) return false;
       const time = h * 60 + m;
       return slots.some(s => {
         if (!s.isOutage) return false;
         const [sh, sm] = s.start.split(':').map(Number);
         let [eh, em] = s.end.split(':').map(Number);
-        if (eh === 0 && em === 0) eh = 24; // Обробка 00:00 як кінця доби
+        if (eh === 0 && em === 0) eh = 24;
         return time >= (sh * 60 + sm) && time < (eh * 60 + em);
       });
     }
 
-    // Старт додатка
     window.onload = () => init(0);
   </script>
 </body>
