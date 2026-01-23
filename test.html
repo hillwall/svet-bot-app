@@ -102,7 +102,7 @@ function saveSelection() {
     }
 
     document.getElementById("status").innerText = "✅ Збережено";
-    document.getElementById("result").innerText = res.scheduleText;
+    document.getElementById("result").innerHTML = res.scheduleText;
   })
   .catch(() => {
     document.getElementById("status").innerText = "❌ Помилка зʼєднання";
