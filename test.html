@@ -1,204 +1,112 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<style>
-:root {
-  --bg:#f3f4f6;
-  --card:#fff;
-  --accent:#2563eb;
-  --off:#0f172a;
-  --on:#fde68a;
-}
-body {
-  margin:0;
-  font-family:system-ui,-apple-system;
-  background:var(--bg);
-  padding:12px;
-}
-.card {
-  background:var(--card);
-  border-radius:14px;
-  padding:14px;
-  margin-bottom:12px;
-}
-h2 {margin:0 0 10px}
-select,button {
-  width:100%;
-  padding:10px;
-  border-radius:10px;
-  border:1px solid #ddd;
-  font-size:15px;
-}
-button {
-  background:var(--accent);
-  color:#fff;
-  border:none;
-  margin-top:8px;
-}
-.tabs {
-  display:flex;
-  gap:6px;
-}
-.tab {
-  flex:1;
-  padding:8px;
-  border-radius:8px;
-  background:#e5e7eb;
-  text-align:center;
-  font-weight:600;
-}
-.tab.active {
-  background:var(--card);
-  box-shadow:0 2px 6px rgba(0,0,0,.1);
-}
-.grid {
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:6px;
-}
-.hour {
-  font-size:12px;
-  padding:6px;
-  border-radius:8px;
-  background:#fff;
-  text-align:center;
-}
-.off {background:var(--off);color:#fde68a}
-.on {background:var(--on)}
-.current {outline:3px solid var(--accent)}
-.status {
-  padding:12px;
-  border-radius:12px;
-  font-weight:600;
-  text-align:center;
-}
-.status.on {background:var(--on)}
-.status.off {background:var(--off);color:#fde68a}
-</style>
+  <meta charset="UTF-8">
+  <title>Світло — вибір черги</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: Arial; padding: 16px; }
+    select, button { width: 100%; padding: 8px; margin-top: 10px; }
+    #status { margin-top: 12px; }
+    #result { margin-top: 16px; white-space: pre-line; }
+  </style>
 </head>
-
 <body>
 
-<div id="step-select" class="card">
-  <h2>Оберіть область</h2>
-  <select id="region"></select>
+<h3>Оберіть область</h3>
+<select id="region"></select>
 
-  <h2 style="margin-top:10px">Оберіть чергу</h2>
-  <select id="queue"></select>
+<h3>Оберіть чергу</h3>
+<select id="queue"></select>
 
-  <button onclick="save()">Зберегти</button>
-</div>
+<button onclick="saveSelection()">Зберегти</button>
 
-<div id="step-schedule" style="display:none">
-
-  <div class="card">
-    <div class="tabs">
-      <div class="tab active" onclick="load(0)" id="t0">Сьогодні</div>
-      <div class="tab" onclick="load(1)" id="t1">Завтра</div>
-    </div>
-  </div>
-
-  <div id="status" class="card status">Завантаження…</div>
-  <div id="grid" class="card grid"></div>
-
-</div>
+<div id="status"></div>
+<div id="result"></div>
 
 <script>
-const tg = Telegram.WebApp;
-tg.expand();
+const tg = window.Telegram.WebApp;
+tg.ready();
 
-const API_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
-const chatId = tg.initDataUnsafe.user?.id || "test";
-
-async function api(p){
-  const r = await fetch(API_URL + "?" + new URLSearchParams(p));
-  return r.json();
+const user = tg.initDataUnsafe?.user;
+if (!user || !user.id) {
+  alert("❌ Помилка: Mini App відкрито не з Telegram");
 }
 
-async function init(){
-  const regions = await api({action:"getRegions"});
-  const rSel = document.getElementById("region");
-  regions.forEach(r=>{
-    const o=document.createElement("option");
-    o.value=r.url; o.text=r.name;
-    rSel.appendChild(o);
-  });
-  loadQueues();
-}
+// ⚠️ ЗАМІНИ НА СВІЙ TEST GAS URL
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
 
-async function loadQueues(){
-  const regionUrl = region.value;
-  const qs = await api({action:"getQueues", region:regionUrl});
-  const qSel = document.getElementById("queue");
-  qSel.innerHTML="";
-  qs.forEach(q=>{
-    const o=document.createElement("option");
-    o.value=q.url; o.text=q.name;
-    qSel.appendChild(o);
-  });
-}
-region.onchange=loadQueues;
-
-async function save(){
-  const rName = region.options[region.selectedIndex].text;
-  const qName = queue.options[queue.selectedIndex].text;
-  const qUrl = queue.value;
-
-  await api({
-    action:"saveSelection",
-    chatId,
-    region_name:rName,
-    queue_name:qName,
-    queue_url:qUrl
-  });
-
-  document.getElementById("step-select").style.display="none";
-  document.getElementById("step-schedule").style.display="block";
-  load(0);
-}
-
-async function load(offset){
-  t0.classList.toggle("active",offset===0);
-  t1.classList.toggle("active",offset===1);
-
-  const d = await api({action:"getSchedule",chatId,offset});
-  if(d.error){
-    status.innerText=d.error;
-    return;
+// ===== ДЕМО ДАНІ (ТИМЧАСОВО) =====
+const regions = [
+  {
+    name: "Вінницька область",
+    queues: [
+      { name: "Черга 1.1", url: "/vinnytska-oblast/cherha-1-1" },
+      { name: "Черга 1.2", url: "/vinnytska-oblast/cherha-1-2" }
+    ]
   }
+];
 
-  status.className="card status "+(d.status.includes("ВІДСУТНЄ")?"off":"on");
-  status.innerHTML=d.status.replace(/\n/g,"<br>");
+// ===== ІНІЦІАЛІЗАЦІЯ =====
+const regionSelect = document.getElementById("region");
+const queueSelect = document.getElementById("queue");
 
-  grid.innerHTML="";
-  const nowH=new Date().getHours();
+regions.forEach((r, i) => {
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.textContent = r.name;
+  regionSelect.appendChild(opt);
+});
 
-  for(let h=0;h<24;h++){
-    const cell=document.createElement("div");
-    cell.className="hour";
-    if(isOff(h,15,d.slots)&&isOff(h,45,d.slots)) cell.classList.add("off");
-    else cell.classList.add("on");
-    if(h===nowH && offset===0) cell.classList.add("current");
-    cell.innerText=`${String(h).padStart(2,"0")}-${String(h+1).padStart(2,"0")}`;
-    grid.appendChild(cell);
-  }
-}
+regionSelect.onchange = () => {
+  queueSelect.innerHTML = "";
+  regions[regionSelect.value].queues.forEach(q => {
+    const opt = document.createElement("option");
+    opt.value = q.url;
+    opt.textContent = q.name;
+    opt.dataset.name = q.name;
+    queueSelect.appendChild(opt);
+  });
+};
 
-function isOff(h,m,slots){
-  const t=h*60+m;
-  return slots.some(s=>{
-    if(!s.isOutage) return false;
-    const a=s.start.split(":").map(Number);
-    const b=s.end==="00:00"?[24,0]:s.end.split(":").map(Number);
-    return t>=a[0]*60+a[1] && t<b[0]*60+b[1];
+regionSelect.dispatchEvent(new Event("change"));
+
+// ===== ЗБЕРЕЖЕННЯ =====
+function saveSelection() {
+  document.getElementById("status").innerText = "⏳ Завантаження…";
+  document.getElementById("result").innerText = "";
+
+  const region = regions[regionSelect.value];
+  const queueOpt = queueSelect.selectedOptions[0];
+
+  const payload = {
+    chat_id: user.id,
+    first_name: user.first_name || "",
+    username: user.username || "",
+    region_name: region.name,
+    queue_name: queueOpt.dataset.name,
+    queue_url: queueOpt.value
+  };
+
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (!res.ok) {
+      document.getElementById("status").innerText = "❌ Помилка";
+      return;
+    }
+
+    document.getElementById("status").innerText = "✅ Збережено";
+    document.getElementById("result").innerText = res.scheduleText;
+  })
+  .catch(() => {
+    document.getElementById("status").innerText = "❌ Помилка зʼєднання";
   });
 }
-
-init();
 </script>
+
 </body>
 </html>
