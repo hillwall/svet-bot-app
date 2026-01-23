@@ -6,6 +6,7 @@
   <title>Світло Бот</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    /* --- СТИЛІ З ВІННИЦЬКОГО ФАЙЛУ --- */
     :root {
       --bg: var(--tg-theme-bg-color, #f0f2f5);
       --card: var(--tg-theme-secondary-bg-color, #ffffff);
@@ -13,10 +14,12 @@
       --hint: var(--tg-theme-hint-color, #777);
       --accent: #2481cc;
       
-      /* Палітра "Вінниця" */
-      --color-light: #e6e6a1; /* Світло є */
-      --color-dark: #333333;  /* Світла немає */
-      --color-current-border: #ff3b30;
+      /* Палітра Вінниці */
+      --color-light: #e6e6a1; /* Жовтий (світло є) */
+      --color-dark: #00193a;  /* Темно-синій (світла немає) */
+      --color-border-light: #d1d18b;
+      --white: #ffffff;
+      --red: #ff3b30;
     }
 
     body {
@@ -25,99 +28,131 @@
       color: var(--text);
       margin: 0;
       padding: 12px;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+      display: flex; flex-direction: column; min-height: 100vh;
       box-sizing: border-box;
-    }
-
-    /* КАРТКИ І КОНТЕЙНЕРИ */
-    .card {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .hidden { display: none !important; }
 
-    /* ЕЛЕМЕНТИ ФОРМИ */
-    h3 { margin-top: 0; text-align: center; }
-    p { color: var(--hint); font-size: 14px; text-align: center; }
-
-    select {
-      width: 100%; padding: 12px; margin-bottom: 12px;
-      border: 1px solid #ccc; border-radius: 10px;
-      background: var(--bg); color: var(--text);
-      font-size: 16px; -webkit-appearance: none;
+    /* ЗАГОЛОВОК */
+    .header-row {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 16px; padding: 0 4px;
+    }
+    .title-group h1 {
+      margin: 0; font-size: 22px; font-weight: 700;
+      line-height: 1.2;
+    }
+    .title-group p {
+      margin: 4px 0 0 0; font-size: 14px; color: var(--hint);
     }
     
-    button.main-btn {
-      width: 100%; padding: 14px; border: none; border-radius: 10px;
-      background: var(--accent); color: white;
-      font-size: 16px; font-weight: 600; cursor: pointer;
-    }
-
-    /* ЗАГОЛОВОК ГРАФІКА */
-    .header-row {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 12px;
-    }
-    .title-block h2 { margin: 0; font-size: 20px; }
-    .title-block span { font-size: 13px; color: var(--hint); }
+    /* СТАТУС (БЕЙДЖ) */
     .status-badge {
-      background: var(--color-light); color: #000;
-      padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;
+      font-size: 13px; font-weight: 600;
+      padding: 6px 12px; border-radius: 20px;
+      background-color: var(--color-light); color: #333;
+      white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .status-badge.off { background: var(--color-dark); color: #fff; }
+    .status-badge.off {
+      background-color: var(--color-dark); color: var(--white);
+    }
 
-    /* ТАБИ (Сьогодні/Завтра) */
+    /* ВІКЛАДКИ (Сьогодні/Завтра) */
     .tabs {
-      display: flex; background: rgba(0,0,0,0.05);
-      border-radius: 9px; padding: 3px; margin-bottom: 16px;
+      display: flex; background: rgba(118, 118, 128, 0.12);
+      border-radius: 9px; padding: 2px; margin-bottom: 20px;
     }
     .tab {
       flex: 1; text-align: center; padding: 8px;
-      border-radius: 7px; font-size: 14px; cursor: pointer;
-      color: var(--hint); transition: 0.2s;
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      border-radius: 7px; color: var(--text);
+      transition: all 0.2s ease;
     }
     .tab.active {
-      background: var(--card); color: var(--text);
-      font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background: var(--card);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+      font-weight: 600;
     }
 
-    /* СІТКА ГРАФІКА (ВІННИЦЬКИЙ СТИЛЬ) */
+    /* СІТКА ГРАФІКА */
+    .schedule-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
     .grid {
       display: flex; flex-wrap: wrap;
-      gap: 0; border-radius: 8px; overflow: hidden;
+      border-radius: 8px; overflow: hidden;
       border: 1px solid rgba(0,0,0,0.1);
     }
+
     .hour {
-      width: 25%; /* 4 в ряд для мобільного */
-      height: 50px;
+      width: 25%; /* 4 стовпчики мобільний */
+      height: 44px;
       background-color: var(--color-light);
-      border: 1px solid rgba(0,0,0,0.05);
+      border: 0.5px solid var(--color-border-light);
       box-sizing: border-box;
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 500; color: #333;
+      font-size: 13px; font-weight: 500; color: #333;
       position: relative;
     }
     
     /* Адаптивність сітки */
-    @media (min-width: 350px) { .hour { width: 20%; } } /* 5 в ряд */
-    @media (min-width: 400px) { .hour { width: 16.66%; } } /* 6 в ряд */
+    @media (min-width: 360px) { .hour { width: 20%; } } /* 5 стовпчиків */
+    @media (min-width: 420px) { .hour { width: 16.66%; } } /* 6 стовпчиків */
 
-    /* Статуси */
-    .hour.off-full { background-color: var(--color-dark); color: #fff; }
-    
-    /* Поточна година */
-    .hour.current {
-      box-shadow: inset 0 0 0 3px var(--color-current-border);
-      z-index: 2;
+    /* Стилі для вимкнень */
+    .hour.off-full {
+      background-color: var(--color-dark);
+      color: var(--white);
+      border-color: #002555;
     }
 
-    .loader { text-align: center; padding: 40px; color: var(--hint); }
+    /* Поточна година */
+    .hour.current {
+      border: 2px solid var(--red) !important;
+      z-index: 10;
+    }
+    /* Маленька мітка "Зараз" (опціонально) */
+    .hour.current::after {
+      content: '';
+      position: absolute; top: 2px; right: 2px;
+      width: 6px; height: 6px; background: var(--red);
+      border-radius: 50%;
+    }
+
+    /* КНОПКИ ТА ФОРМИ */
+    select {
+      width: 100%; padding: 14px; margin-bottom: 12px;
+      border: 1px solid #ccc; border-radius: 12px;
+      background: var(--card); color: var(--text);
+      font-size: 16px; -webkit-appearance: none;
+    }
+    
+    .btn-main {
+      width: 100%; padding: 16px; border: none; border-radius: 14px;
+      background: var(--accent); color: white;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-main:active { opacity: 0.8; }
+
+    .btn-text {
+      background: none; border: none; width: 100%;
+      padding: 12px; color: var(--hint);
+      font-size: 15px; cursor: pointer;
+    }
+
+    .loader { margin-top: 40px; text-align: center; color: var(--hint); }
+    
+    /* Повідомлення про помилку */
+    #error-msg {
+        text-align: center; color: var(--red); font-size: 14px; margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -129,9 +164,9 @@
     <p>Завантаження даних...</p>
   </div>
 
-  <div id="setup-screen" class="card hidden">
-    <h3>⚙️ Налаштування</h3>
-    <p>Оберіть вашу область та чергу</p>
+  <div id="setup-screen" class="hidden" style="text-align:center; padding-top:20px;">
+    <h2 style="margin-bottom:10px;">Налаштування</h2>
+    <p style="margin-bottom:20px; color:var(--hint)">Оберіть вашу область та чергу</p>
     
     <select id="region-select" onchange="loadQueues()">
       <option value="">Завантаження областей...</option>
@@ -141,42 +176,43 @@
       <select id="queue-select">
         <option value="">Оберіть чергу</option>
       </select>
-      <button class="main-btn" onclick="saveConfig()">Зберегти</button>
+      <button class="btn-main" onclick="saveConfig()">Зберегти</button>
     </div>
   </div>
 
   <div id="view-screen" class="hidden">
-    <div class="card">
-      <div class="header-row">
-        <div class="title-block">
-          <h2 id="view-queue">Черга ...</h2>
-          <span id="view-region">Область ...</span>
-        </div>
-        <div id="status-badge" class="status-badge">Світло є</div>
+    
+    <div class="header-row">
+      <div class="title-group">
+        <h1 id="view-queue">Черга ...</h1>
+        <p id="view-region">Завантаження...</p>
       </div>
-
-      <div class="tabs">
-        <div id="tab-0" class="tab active" onclick="loadSchedule(0)">Сьогодні</div>
-        <div id="tab-1" class="tab" onclick="loadSchedule(1)">Завтра</div>
-      </div>
-
-      <div id="schedule-grid" class="grid">
-        </div>
-      <p id="error-msg" style="color:red; margin-top:10px;"></p>
+      <div id="status-badge" class="status-badge">...</div>
     </div>
 
-    <button onclick="showSetup()" style="background:none; border:none; color:var(--accent); width:100%; padding:10px;">
-      Змінити налаштування
+    <div class="tabs">
+      <div id="tab-0" class="tab active" onclick="loadSchedule(0)">Сьогодні</div>
+      <div id="tab-1" class="tab" onclick="loadSchedule(1)">Завтра</div>
+    </div>
+
+    <div class="schedule-card">
+      <div id="schedule-grid" class="grid">
+        </div>
+      <div id="error-msg"></div>
+    </div>
+
+    <button class="btn-text" onclick="showSetup()">
+      ⚙️ Змінити чергу
     </button>
   </div>
 
 <script>
   const tg = window.Telegram.WebApp;
   tg.expand();
-  const userId = tg.initDataUnsafe?.user?.id || "TEST_USER_ID"; // Фолбек для тесту
+  // Для тестів у браузері (якщо відкривати не через ТГ)
+  const userId = tg.initDataUnsafe?.user?.id || "TEST_USER_ID";
 
-  // ВСТАВ СЮДИ URL СКРИПТА GOOGLE (той, що закінчується на /exec)
-  // ВАЖЛИВО: Переконайся, що ти зробив New Deployment!
+  // 👇👇👇 ТУТ ВСТАВ СВІЙ WEB APP URL 👇👇👇
   const API_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
 
   // --- API ---
@@ -189,39 +225,44 @@
       return await res.json();
     } catch (e) {
       console.error(e);
-      return null;
+      return { error: "Помилка мережі" };
     }
   }
 
   // --- INIT ---
   window.onload = async () => {
-    // Перевіряємо, чи є збережені дані
-    const user = await callApi('getUserSchedule', { chatId: userId });
+    // 1. Спробуємо отримати графік.
+    // Якщо юзера немає в базі -> сервер поверне error: "UserNotFound"
+    const data = await callApi('getUserSchedule', { chatId: userId });
     document.getElementById('loader').classList.add('hidden');
 
-    if (user && user.error === "UserNotFound") {
+    if (data && data.error === "UserNotFound") {
       showSetup();
-    } else if (user && !user.error) {
-      showView(user);
+    } else if (data && !data.error) {
+      showView(data);
     } else {
-      alert("Помилка з'єднання з сервером. Спробуйте пізніше.");
+      // Якась інша помилка
+      document.body.innerHTML = `<h3 style="text-align:center;margin-top:50px;">Помилка: ${data?.error || "Невідома"}</h3>`;
     }
   };
 
-  // --- SETUP LOGIC ---
+  // --- SETUP ---
   async function showSetup() {
     document.getElementById('view-screen').classList.add('hidden');
     document.getElementById('setup-screen').classList.remove('hidden');
     
+    // Завантажуємо області
     const regions = await callApi('getRegions');
     const rSel = document.getElementById('region-select');
     rSel.innerHTML = '<option value="">Оберіть область</option>';
-    regions.forEach(r => {
-      const opt = document.createElement('option');
-      opt.value = r.url;
-      opt.text = r.name;
-      rSel.appendChild(opt);
-    });
+    if (regions && regions.length) {
+      regions.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.url;
+        opt.text = r.name;
+        rSel.appendChild(opt);
+      });
+    }
   }
 
   async function loadQueues() {
@@ -231,53 +272,63 @@
     const qs = await callApi('getChildren', { url: url });
     const qSel = document.getElementById('queue-select');
     qSel.innerHTML = '<option value="">Оберіть чергу</option>';
-    qs.forEach(q => {
-      const opt = document.createElement('option');
-      opt.value = q.url;
-      opt.text = q.name;
-      qSel.appendChild(opt);
-    });
-    document.getElementById('queue-block').classList.remove('hidden');
+    if (qs && qs.length) {
+      qs.forEach(q => {
+        const opt = document.createElement('option');
+        opt.value = q.url;
+        opt.text = q.name;
+        qSel.appendChild(opt);
+      });
+      document.getElementById('queue-block').classList.remove('hidden');
+    }
   }
 
   async function saveConfig() {
     const rSel = document.getElementById('region-select');
     const qSel = document.getElementById('queue-select');
-    if (!qSel.value) return alert("Оберіть чергу!");
-
+    
+    if (!qSel.value) return alert("Будь ласка, оберіть чергу!");
+    
     document.getElementById('loader').classList.remove('hidden');
     document.getElementById('setup-screen').classList.add('hidden');
-
+    
+    // Відправляємо назву області окремо, якщо треба буде зберегти (поки скрипт зберігає тільки URL черги)
     await callApi('saveSelection', {
       chatId: userId,
       url: qSel.value,
-      name: qSel.options[qSel.selectedIndex].text
+      name: qSel.options[qSel.selectedIndex].text,
+      // Можна передати назву області, якщо допиляти бекенд, але поки так
     });
     
     location.reload();
   }
 
-  // --- VIEW LOGIC ---
+  // --- VIEW ---
   function showView(data) {
     document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('view-screen').classList.remove('hidden');
     
-    // Відображення заголовків
-    document.getElementById('view-queue').innerText = data.queueName;
-    document.getElementById('view-region').innerText = "Ваша область"; // Або передати назву з бекенду
+    // Заповнюємо шапку
+    document.getElementById('view-queue').innerText = data.queueName || "Черга";
+    // Якщо бекенд не повертає назву області, поки пишемо дефолтну. 
+    // (Але якщо ти додав збереження назви області в базу, вона прийде сюди)
+    document.getElementById('view-region').innerText = data.region || "Ваша область";
 
     renderGrid(data.schedule);
   }
 
   async function loadSchedule(offset) {
+    // Перемикання табів
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + offset).classList.add('active');
     
-    document.getElementById('schedule-grid').innerHTML = '<div style="width:100%;text-align:center;padding:20px;">Оновлення...</div>';
+    const grid = document.getElementById('schedule-grid');
+    grid.innerHTML = '<div style="width:100%;text-align:center;padding:20px;color:gray;">Оновлення...</div>';
     
     const res = await callApi('getUserSchedule', { chatId: userId, dateOffset: offset });
+    
     if (res.schedule && res.schedule.error) {
-       document.getElementById('schedule-grid').innerHTML = '';
+       grid.innerHTML = '';
        document.getElementById('error-msg').innerText = res.schedule.error;
     } else {
        renderGrid(res.schedule);
@@ -291,44 +342,52 @@
 
     if (!schedule || !schedule.slots) return;
 
-    const currentHour = new Date().getHours();
-    let currentStatus = "Світло є";
-    let isCurrentOff = false;
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    // Перевіряємо, чи дивимось ми "Сьогодні" (активний таб 0)
+    const isTodayTab = document.getElementById('tab-0').classList.contains('active');
+    
+    let isLightOffNow = false;
 
-    // Малюємо 24 квадратики
     for (let i = 0; i < 24; i++) {
       const slot = schedule.slots.find(s => s.hour === i);
       const isOff = slot && slot.status === 'off';
       
       const div = document.createElement('div');
-      
-      // Стилі як у Вінниці
+      // Класи
       if (isOff) {
-        div.className = 'hour off-full'; 
+        div.className = 'hour off-full';
       } else {
         div.className = 'hour';
       }
 
-      // Поточна година
-      // Перевіряємо чи це сьогодні (логіка проста: якщо завантажили 'Сьогодні', то підсвічуємо)
-      const activeTab = document.querySelector('.tab.active').innerText;
-      if (i === currentHour && activeTab === 'Сьогодні') {
+      // Підсвітка поточної години
+      if (isTodayTab && i === currentHour) {
         div.classList.add('current');
-        if (isOff) {
-            currentStatus = "Світла немає";
-            isCurrentOff = true;
-        }
+        if (isOff) isLightOffNow = true;
       }
 
       // Текст 00-01
       div.innerText = `${String(i).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;
+      
       grid.appendChild(div);
     }
 
-    // Оновлюємо бейдж статусу
+    // Оновлення статусу в шапці
     const badge = document.getElementById('status-badge');
-    badge.innerText = currentStatus;
-    if (isCurrentOff) badge.classList.add('off'); else badge.classList.remove('off');
+    if (isTodayTab) {
+        if (isLightOffNow) {
+            badge.innerText = "Світла немає";
+            badge.className = "status-badge off";
+        } else {
+            badge.innerText = "Світло є";
+            badge.className = "status-badge";
+        }
+    } else {
+        badge.innerText = "Завтра";
+        badge.className = "status-badge";
+    }
   }
 </script>
 </body>
