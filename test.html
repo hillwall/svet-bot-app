@@ -1,184 +1,195 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg: var(--tg-theme-bg-color, #f0f2f5);
-      --card: var(--tg-theme-secondary-bg-color, #ffffff);
-      --text: var(--tg-theme-text-color, #222);
-      --accent: #2481cc;
-      --color-light: #e6e6a1;
-      --color-dark: #00193a;
-      --white: #ffffff;
+      --bg-color: var(--tg-theme-bg-color, #fff);
+      --text-color: var(--tg-theme-text-color, #000);
+      --button-color: var(--tg-theme-button-color, #2481cc);
+      --button-text: var(--tg-theme-button-text-color, #fff);
+      --secondary-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
     }
-    body { font-family: sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 12px; }
-    .view { display: none; }
-    .view.active { display: block; }
-    select, .btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
-    .btn { background: var(--accent); color: white; font-weight: bold; cursor: pointer; border: none; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
-    .hour { padding: 8px 2px; text-align: center; border-radius: 8px; font-size: 12px; font-weight: bold; background: var(--white); border: 1px solid #ddd; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .off { background: var(--color-dark) !important; color: white !important; }
-    .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-    .tab { flex: 1; padding: 10px; text-align: center; background: #ddd; border-radius: 8px; cursor: pointer; }
-    .tab.active { background: var(--accent); color: white; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .status-card { padding: 15px; border-radius: 12px; text-align: center; font-weight: bold; margin-bottom: 15px; border: 1px solid #ddd; background: var(--card); }
+    body { font-family: sans-serif; background: var(--bg-color); color: var(--text-color); padding: 20px; }
+    .hidden { display: none; }
+    select, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; background: var(--secondary-bg); color: var(--text-color); font-size: 16px; }
+    button { background: var(--button-color); color: var(--button-text); border: none; font-weight: bold; cursor: pointer; }
+    
+    /* Стилі для сітки графіка (з Вінницького файлу) */
+    .grid { display: flex; flex-wrap: wrap; margin-top: 20px; }
+    .hour { width: 4.16%; height: 40px; border: 1px solid #eee; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+    .status-on { background-color: #e6e6a1; color: #000; } /* Світло є */
+    .status-off { background-color: #333; color: #fff; } /* Світла немає */
+    
+    h2, h3 { text-align: center; }
   </style>
 </head>
 <body>
 
-  <div id="setup-view" class="view">
-    <h3>🔧 Вибір області та черги</h3>
-    <select id="region" onchange="loadQueues()">
-      <option value="">Завантаження...</option>
-    </select>
-    <select id="queue" disabled style="margin-top:15px;">
-      <option value="">Спочатку оберіть область</option>
-    </select>
-    <button id="save-btn" class="btn" onclick="saveSelection()" disabled style="opacity:0.6; margin-top:20px;">Зберегти вибір</button>
+  <div id="setup-screen" class="hidden">
+    <h3>Оберіть область та чергу</h3>
+    <select id="region-select"><option value="">Завантаження областей...</option></select>
+    <select id="queue-select" class="hidden"><option value="">Спочатку оберіть область</option></select>
+    <button id="save-btn" class="hidden" onclick="saveConfig()">Зберегти</button>
   </div>
 
-  <div id="schedule-view" class="view">
-    <div class="header">
-      <div id="info" style="font-weight:bold; font-size:14px;"></div>
-      <button class="btn" style="width:auto; padding:5px 15px; margin:0;" onclick="showSetup()">✏️ Змінити</button>
+  <div id="schedule-screen" class="hidden">
+    <h2 id="user-queue-title">Ваша черга</h2>
+    <div style="display:flex; gap:10px;">
+      <button onclick="loadSchedule(0)">Сьогодні</button>
+      <button onclick="loadSchedule(1)">Завтра</button>
     </div>
-    <div class="tabs">
-      <div id="tab0" class="tab active" onclick="loadSchedule(0)">СЬОГОДНІ</div>
-      <div id="tab1" class="tab" onclick="loadSchedule(1)">ЗАВТРА</div>
-    </div>
-    <div id="status" class="status-card"></div>
-    <div id="grid" class="grid"></div>
+    <div id="schedule-container" class="grid"></div>
+    <p id="status-msg" style="text-align:center; margin-top:20px; color: gray;"></p>
+    <button onclick="showSetup()" style="margin-top:30px; background: #555;">Змінити чергу</button>
   </div>
 
 <script>
-  // ❗️ ЗАМІНИ НА СВОЄ ПОСИЛАННЯ ВІД GOOGLE APPS SCRIPT
-  const API = "https://script.google.com/macros/s/AKfyc...твій_id.../exec"; 
+  const tg = window.Telegram.WebApp;
+  tg.expand();
+  const userId = tg.initDataUnsafe?.user?.id;
+  // const userId = "197183975"; // Для тестів у браузері розкоментуй
+
+  function run() {
+    // 1. Перевіряємо, чи є у користувача збережена черга
+    google.script.run.withSuccessHandler(userData => {
+      if (userData && userData.queueUrl) {
+        showScheduleScreen(userData);
+      } else {
+        showSetup();
+      }
+    }).getUserData(userId);
+  }
+
+  // --- ЛОГІКА НАЛАШТУВАННЯ ---
+  function showSetup() {
+    document.getElementById('schedule-screen').classList.add('hidden');
+    document.getElementById('setup-screen').classList.remove('hidden');
+    loadRegions();
+  }
+
+  function loadRegions() {
+    google.script.run.withSuccessHandler(regions => {
+      const sel = document.getElementById('region-select');
+      sel.innerHTML = '<option value="">Оберіть область</option>';
+      regions.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.url;
+        opt.text = r.name;
+        sel.appendChild(opt);
+      });
+      sel.onchange = () => loadQueues(sel.value, sel.options[sel.selectedIndex].text);
+    }).doGet({ parameter: { action: 'getRegions' } }); // Виклик серверної функції через обгортку або прямий запит
+    // Примітка: через google.script.run ми не можемо передавати об'єкт event, тому треба адаптувати сервер
+    // АБО використовувати fetch до WebApp URL. 
+    // ДЛЯ ПРОСТОТИ: використовуємо fetch, бо це Mini App.
+  }
   
-  let tg = window.Telegram.WebApp;
-  const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "197183975"; 
+  // Хак для виклику doGet через google.script.run не працює напряму з параметрами e.
+  // Тому краще використовувати fetch до deployed Web App URL
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
 
-  async function init() {
-    tg.expand();
-    try {
-      const res = await fetch(`${API}?action=checkUser&chatId=${userId}`);
-      const data = await res.json();
-      if (data.hasQueue) showSchedule();
-      else showSetup();
-    } catch(e) {
-      alert("Помилка з'єднання з сервером. Спробуйте пізніше.");
-    }
+  function api(action, params = {}) {
+    const url = new URL(WEB_APP_URL);
+    url.searchParams.append('action', action);
+    for (const key in params) url.searchParams.append(key, params[key]);
+    return fetch(url).then(res => res.json());
   }
 
-  async function showSetup() {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById('setup-view').classList.add('active');
-    
-    const sel = document.getElementById('region');
-    sel.innerHTML = '<option>Завантаження...</option>';
-    
-    const res = await fetch(`${API}?action=getRegions`);
-    const regions = await res.json();
-    
-    if(!regions || regions.length === 0) {
-      sel.innerHTML = '<option>⚠️ Помилка: Список пустий</option>';
-      return;
-    }
-
-    sel.innerHTML = '<option value="">-- Оберіть область --</option>';
-    regions.forEach(r => sel.innerHTML += `<option value="${r.url}">${r.name}</option>`);
-  }
-
-  async function loadQueues() {
-    const url = document.getElementById('region').value;
-    const qSel = document.getElementById('queue');
-    const btn = document.getElementById('save-btn');
-    
-    qSel.innerHTML = '<option>Завантаження...</option>';
-    qSel.disabled = true;
-    btn.disabled = true;
-    btn.style.opacity = '0.6';
-
-    if (!url) return;
-
-    const res = await fetch(`${API}?action=getQueues&regionUrl=${url}`);
-    const queues = await res.json();
-
-    qSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
-    queues.forEach(q => {
-      // Додаємо назву черги в атрибут, щоб потім зберегти
-      qSel.innerHTML += `<option value="${q.url}" data-name="${q.name}">${q.name}</option>`;
+  // Переписуємо loadRegions з fetch
+  function loadRegions() {
+    api('getRegions').then(regions => {
+      const sel = document.getElementById('region-select');
+      sel.innerHTML = '<option value="">Оберіть область</option>';
+      regions.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.url;
+        opt.text = r.name;
+        sel.appendChild(opt);
+      });
+      sel.onchange = () => loadQueues(sel.value, sel.options[sel.selectedIndex].text);
     });
-    qSel.disabled = false;
   }
-  
-  // Активація кнопки
-  document.getElementById('queue').addEventListener('change', function() {
-      const btn = document.getElementById('save-btn');
-      if(this.value) { btn.disabled = false; btn.style.opacity = '1'; }
-  });
 
-  async function saveSelection() {
-    const regSel = document.getElementById('region');
-    const qSel = document.getElementById('queue');
-    const regionName = regSel.options[regSel.selectedIndex].text;
-    const queueName = qSel.options[qSel.selectedIndex].getAttribute('data-name');
-    const queueUrl = qSel.value;
+  function loadQueues(parentUrl, regionName) {
+    if(!parentUrl) return;
+    window.selectedRegion = regionName;
+    api('getChildren', { url: parentUrl }).then(children => {
+      const sel = document.getElementById('queue-select');
+      sel.classList.remove('hidden');
+      sel.innerHTML = '<option value="">Оберіть чергу</option>';
+      children.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.url;
+        opt.text = c.name;
+        sel.appendChild(opt);
+      });
+      sel.onchange = () => {
+        document.getElementById('save-btn').classList.remove('hidden');
+      };
+    });
+  }
+
+  function saveConfig() {
+    const qSel = document.getElementById('queue-select');
+    const qUrl = qSel.value;
+    const qName = qSel.options[qSel.selectedIndex].text;
     
-    if(!queueUrl) return;
-
-    document.getElementById('save-btn').innerText = "Збереження...";
-    await fetch(`${API}?action=saveUser&chatId=${userId}&queue=${encodeURIComponent(queueName)}&url=${encodeURIComponent(queueUrl)}&regionName=${encodeURIComponent(regionName)}`);
-    document.getElementById('save-btn').innerText = "Зберегти вибір";
-    showSchedule();
+    api('saveUserConfig', {
+      chatId: userId,
+      region: window.selectedRegion,
+      queueName: qName,
+      queueUrl: qUrl
+    }).then(res => {
+      if(res.success) {
+        // Перезавантажуємо сторінку або переходимо до графіка
+        location.reload(); 
+      }
+    });
   }
 
-  function showSchedule() {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById('schedule-view').classList.add('active');
+  // --- ЛОГІКА ВІДОБРАЖЕННЯ ---
+  function showScheduleScreen(user) {
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('schedule-screen').classList.remove('hidden');
+    document.getElementById('user-queue-title').innerText = `${user.region} - ${user.queueName}`;
     loadSchedule(0);
   }
 
-  async function loadSchedule(offset) {
-    document.getElementById('tab0').classList.toggle('active', offset === 0);
-    document.getElementById('tab1').classList.toggle('active', offset === 1);
+  function loadSchedule(offset) {
+    document.getElementById('status-msg').innerText = "Завантаження...";
+    document.getElementById('schedule-container').innerHTML = "";
     
-    const grid = document.getElementById('grid');
-    const statusEl = document.getElementById('status');
-    
-    grid.innerHTML = '<div style="grid-column: span 4; text-align:center; padding:20px;">Завантаження...</div>';
-    statusEl.innerHTML = '...';
-
-    const res = await fetch(`${API}?action=getSchedule&chatId=${userId}&offset=${offset}`);
-    const data = await res.json();
-    
-    if (data.error) {
-      grid.innerHTML = `<div style="grid-column: span 4; text-align:center; color:red;">${data.error}</div>`;
-      statusEl.innerText = "Немає даних";
-      return;
-    }
-
-    document.getElementById('info').innerText = `${data.region}, ${data.queue}`;
-    const isOutage = (data.status === "ВІДСУТНЄ");
-    
-    statusEl.innerText = isOutage ? "💡 Світло наразі ВІДСУТНЄ" : "🔆 Світло наразі Є";
-    statusEl.style.background = isOutage ? "var(--color-dark)" : "var(--color-light)";
-    statusEl.style.color = isOutage ? "white" : "black";
-
-    grid.innerHTML = '';
-    data.slots.forEach(s => {
-      const cell = document.createElement('div');
-      cell.className = `hour ${s.isOutage ? 'off' : ''}`;
-      cell.innerHTML = `<span>${s.start}</span><span style="font-size:16px;">${s.isOutage ? '🌑' : '🌕'}</span>`;
-      grid.appendChild(cell);
+    api('getUserSchedule', { chatId: userId, dateOffset: offset }).then(data => {
+      document.getElementById('status-msg').innerText = "";
+      if(data.schedule.error) {
+        document.getElementById('status-msg').innerText = data.schedule.error;
+        return;
+      }
+      renderGrid(data.schedule.slots);
     });
   }
 
-  init();
+  function renderGrid(slots) {
+    const container = document.getElementById('schedule-container');
+    container.innerHTML = "";
+    // Припустимо slots = [{hour: 0, status: 'on'}, ...]
+    // Спрощена візуалізація. В робочому Вінницькому скрипті вона складніша.
+    for(let i=0; i<24; i++) {
+        const slot = slots.find(s => s.hour === i);
+        const div = document.createElement('div');
+        div.className = 'hour ' + (slot && slot.status === 'on' ? 'status-on' : 'status-off');
+        div.innerText = i;
+        container.appendChild(div);
+    }
+  }
+
+  // Старт
+  run(); 
+  // (Але через те, що userId з initDataUnsafe може бути недоступний при прямому відкритті,
+  // краще тестувати це всередині Telegram)
 </script>
 </body>
 </html>
