@@ -13,35 +13,29 @@
             --btn-text: var(--tg-theme-button-text-color, #ffffff);
             --secondary: var(--tg-theme-secondary-bg-color, #f0f2f5);
         }
-        body { font-family: sans-serif; background-color: var(--bg); color: var(--text); padding: 15px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-size: 13px; color: var(--hint); font-weight: bold; }
+        body { font-family: sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--hint); font-weight: bold; }
         select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; background: var(--secondary); color: var(--text); font-size: 16px; outline: none; }
         select:disabled { opacity: 0.4; }
-        .btn { background: var(--btn-bg); color: var(--btn-text); border: none; padding: 16px; border-radius: 12px; font-size: 16px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn:disabled { background: #ccc; color: #888; cursor: not-allowed; }
-        .loader { font-size: 12px; color: var(--btn-bg); display: none; margin-bottom: 5px; }
+        .btn { background: var(--btn-bg); color: var(--btn-text); border: none; padding: 18px; border-radius: 12px; font-size: 16px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn:disabled { background: #ccc; color: #888; }
+        .loader { font-size: 12px; color: var(--btn-bg); display: none; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div id="app">
-        <h3 style="margin-top:0">📍 Налаштування</h3>
+        <h3 style="margin-top:0">📍 Налаштування графіку</h3>
         
         <div class="form-group">
-            <label>1. ОБЛАСТЬ</label>
+            <label>1. ОБЕРІТЬ ОБЛАСТЬ</label>
             <select id="region" onchange="onRegionChange()"><option value="">Завантаження...</option></select>
         </div>
 
         <div class="form-group">
-            <label>2. МІСТО / РАЙОН</label>
-            <div id="city-loader" class="loader">Шукаємо міста...</div>
-            <select id="city" disabled onchange="onCityChange()"><option value="">Оберіть область</option></select>
-        </div>
-
-        <div class="form-group">
-            <label>3. ЧЕРГА / ВУЛИЦЯ (Обов'язково)</label>
-            <div id="queue-loader" class="loader">Шукаємо черги...</div>
-            <select id="queue" disabled onchange="validate()"><option value="">Оберіть локацію</option></select>
+            <label>2. ОБЕРІТЬ ЧЕРГУ / ГРУПУ</label>
+            <div id="queue-loader" class="loader">Шукаємо черги в області...</div>
+            <select id="queue" disabled onchange="validate()"><option value="">Спочатку область</option></select>
         </div>
 
         <button id="save-btn" class="btn" disabled onclick="save()">Зберегти вибір</button>
@@ -59,68 +53,33 @@
                 const sel = document.getElementById('region');
                 sel.innerHTML = '<option value="">-- Оберіть область --</option>';
                 data.forEach(r => sel.innerHTML += `<option value="${r.url}">${r.name}</option>`);
-            } catch (e) { alert("Помилка ініціалізації"); }
+            } catch (e) { alert("Помилка зв'язку"); }
         }
 
         async function onRegionChange() {
             const url = document.getElementById('region').value;
-            const citySel = document.getElementById('city');
             const queueSel = document.getElementById('queue');
             
-            citySel.innerHTML = '<option value="">Завантаження...</option>';
-            citySel.disabled = true;
-            queueSel.innerHTML = '<option value="">Чекаємо...</option>';
+            queueSel.innerHTML = '<option value="">Завантаження...</option>';
             queueSel.disabled = true;
             validate();
 
             if (!url) return;
-            document.getElementById('city-loader').style.display = 'block';
-
-            try {
-                const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
-                const data = await res.json();
-                const cities = data.filter(item => !item.isQueue);
-                const queues = data.filter(item => item.isQueue);
-
-                if (cities.length > 0) {
-                    citySel.innerHTML = '<option value="">-- Оберіть місто --</option>';
-                    cities.forEach(c => citySel.innerHTML += `<option value="${c.url}">${c.name}</option>`);
-                    citySel.disabled = false;
-                } else {
-                    citySel.innerHTML = '<option value="">Міст немає</option>';
-                }
-
-                if (queues.length > 0) {
-                    queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
-                    queues.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
-                    queueSel.disabled = false;
-                }
-            } catch (e) { alert("Помилка завантаження"); }
-            finally { document.getElementById('city-loader').style.display = 'none'; }
-        }
-
-        async function onCityChange() {
-            const url = document.getElementById('city').value;
-            const queueSel = document.getElementById('queue');
-            if (!url) return;
-
-            queueSel.innerHTML = '<option value="">Завантаження...</option>';
-            queueSel.disabled = true;
             document.getElementById('queue-loader').style.display = 'block';
 
             try {
                 const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
                 const data = await res.json();
+
                 if (data.length > 0) {
-                    queueSel.innerHTML = '<option value="">-- Оберіть чергу/вулицю --</option>';
+                    queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
                     data.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
                     queueSel.disabled = false;
                 } else {
-                    queueSel.innerHTML = '<option value="">Нічого не знайдено</option>';
+                    queueSel.innerHTML = '<option value="">Черг не знайдено</option>';
                 }
-            } catch (e) { alert("Помилка завантаження"); }
+            } catch (e) { alert("Помилка завантаження черг"); }
             finally { document.getElementById('queue-loader').style.display = 'none'; }
-            validate();
         }
 
         function validate() {
