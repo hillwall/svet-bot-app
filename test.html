@@ -183,7 +183,6 @@
   }
 
   async function saveConfig() {
-    const rSel = document.getElementById('region-select');
     const qSel = document.getElementById('queue-select');
     
     if (!qSel.value) return alert("Оберіть чергу!");
@@ -191,13 +190,15 @@
     document.getElementById('loader').classList.remove('hidden');
     document.getElementById('setup-screen').classList.add('hidden');
 
-    await callApi('saveUserConfig', {
+    // ВИПРАВЛЕНО: action 'saveSelection' замість 'saveUserConfig'
+    // і параметри підлаштовані під твій скрипт (url, name)
+    await callApi('saveSelection', {
       chatId: userId,
-      region: rSel.options[rSel.selectedIndex].text,
-      queueName: qSel.options[qSel.selectedIndex].text,
-      queueUrl: qSel.value
+      url: qSel.value,
+      name: qSel.options[qSel.selectedIndex].text
     });
 
+    // Перезавантажуємо сторінку, щоб побачити графік
     location.reload();
   }
 
