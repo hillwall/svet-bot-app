@@ -34,8 +34,8 @@
 
         <div class="form-group">
             <label>2. ОБЕРІТЬ ЧЕРГУ / ГРУПУ</label>
-            <div id="queue-loader" class="loader">Шукаємо черги в області...</div>
-            <select id="queue" disabled onchange="validate()"><option value="">Спочатку область</option></select>
+            <div id="queue-loader" class="loader">Завантажуємо черги...</div>
+            <select id="queue" disabled onchange="validate()"><option value="">Спочатку оберіть область</option></select>
         </div>
 
         <button id="save-btn" class="btn" disabled onclick="save()">Зберегти вибір</button>
@@ -53,13 +53,12 @@
                 const sel = document.getElementById('region');
                 sel.innerHTML = '<option value="">-- Оберіть область --</option>';
                 data.forEach(r => sel.innerHTML += `<option value="${r.url}">${r.name}</option>`);
-            } catch (e) { alert("Помилка зв'язку"); }
+            } catch (e) { alert("Помилка ініціалізації"); }
         }
 
         async function onRegionChange() {
             const url = document.getElementById('region').value;
             const queueSel = document.getElementById('queue');
-            
             queueSel.innerHTML = '<option value="">Завантаження...</option>';
             queueSel.disabled = true;
             validate();
@@ -70,7 +69,6 @@
             try {
                 const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
                 const data = await res.json();
-
                 if (data.length > 0) {
                     queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
                     data.forEach(q => queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
@@ -100,7 +98,6 @@
             await fetch(`${WEB_APP_URL}?action=saveSelection&chatId=${chatId}&url=${encodeURIComponent(finalUrl)}&name=${encodeURIComponent(finalName)}`);
             tg.close();
         }
-
         init();
     </script>
 </body>
