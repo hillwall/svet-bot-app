@@ -4,30 +4,44 @@
   <meta charset="UTF-8">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root { --bg: var(--tg-theme-bg-color, #ffffff); --text: var(--tg-theme-text-color, #222); --accent: #2481cc; }
-    body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 15px; margin: 0; }
-    .card { background: var(--tg-theme-secondary-bg-color, #f0f2f5); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
-    select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; }
+    :root { 
+      --bg: var(--tg-theme-bg-color, #ffffff); 
+      --text: var(--tg-theme-text-color, #222); 
+      --accent: #2481cc;
+      --color-off: #00193a;
+      --color-on: #e6e6a1;
+    }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 15px; margin: 0; }
+    .card { background: var(--tg-theme-secondary-bg-color, #f0f2f5); padding: 15px; border-radius: 15px; margin-bottom: 15px; }
+    select, button { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1px solid #ccc; font-size: 16px; }
     button { background: var(--accent); color: white; border: none; font-weight: bold; }
-    .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
-    .hour { font-size: 10px; text-align: center; padding: 10px 2px; border-radius: 5px; background: #ddd; }
-    .off { background: #00193a; color: #fff; }
-    .on { background: #e6e6a1; color: #000; }
-    .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-    .tab { flex: 1; padding: 10px; text-align: center; background: #eee; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .hour { 
+      font-size: 12px; text-align: center; padding: 12px 5px; border-radius: 8px; 
+      font-weight: bold; background: var(--color-on); color: #000;
+    }
+    .hour.off { background: var(--color-off); color: #fff; }
+    .hour.current { border: 2px solid var(--accent); box-shadow: 0 0 5px var(--accent); }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+    .tab { flex: 1; padding: 12px; text-align: center; background: #eee; border-radius: 10px; cursor: pointer; font-weight: bold; }
     .tab.active { background: var(--accent); color: white; }
     .hidden { display: none; }
+    label { font-size: 12px; color: var(--tg-theme-hint-color); font-weight: bold; margin-left: 5px; }
   </style>
 </head>
 <body>
+
   <div id="setup-view">
-    <h3>🌍 Налаштування тесту</h3>
-    <label>Оберіть область:</label>
-    <select id="reg-sel" onchange="loadQueues()"><option>Завантаження...</option></select>
+    <h3 style="margin-top:0">🌍 Вибір черги</h3>
+    <label>ОБЛАСТЬ</label>
+    <select id="reg-sel" onchange="loadQueues()"><option>Завантаження областей...</option></select>
+    
     <div id="q-box" class="hidden">
-      <label>Оберіть чергу:</label>
+      <label>ЧЕРГА / ГРУПА</label>
       <select id="q-sel"></select>
-      <button onclick="save()">Зберегти вибір</button>
+      <button onclick="save()">Зберегти та завантажити</button>
     </div>
   </div>
 
@@ -36,18 +50,19 @@
       <div id="t0" class="tab active" onclick="loadSched(0)">Сьогодні</div>
       <div id="t1" class="tab" onclick="loadSched(1)">Завтра</div>
     </div>
+    
     <div class="card">
-      <h2 id="status">Завантаження...</h2>
+      <h2 id="status" style="margin-top:0; text-align:center">Завантаження...</h2>
       <div id="grid" class="grid"></div>
     </div>
-    <button onclick="document.getElementById('setup-view').classList.remove('hidden'); document.getElementById('main-view').classList.add('hidden');">⚙️ Налаштування</button>
+    
+    <button onclick="showSetup()" style="background:none; color:var(--accent); border:1px solid var(--accent)">⚙️ Налаштування</button>
   </div>
 
 <script>
   const tg = window.Telegram.WebApp;
-  // ТЕСТОВИЙ URL ВЕБ-ДОДАТКА
   const API = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
-  const user = tg.initDataUnsafe.user || { id: "197183975" };
+  const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "197183975";
 
   async function init() {
     tg.expand();
@@ -56,26 +71,23 @@
       const data = await r.json();
       const sel = document.getElementById('reg-sel');
       sel.innerHTML = '<option value="">-- Оберіть область --</option>';
-      data.forEach(item => sel.innerHTML += `<option value="${item.url}">${item.name}</option>`);
-    } catch(e) { console.error("Помилка завантаження областей"); }
+      data.forEach(i => sel.innerHTML += `<option value="${i.url}">${i.name}</option>`);
+    } catch(e) { alert("Помилка мережі"); }
   }
 
   async function loadQueues() {
-    const url = document.getElementById('reg-sel').value;
-    if(!url) return;
-    const r = await fetch(API + "?action=getQueues&regionUrl=" + encodeURIComponent(url));
+    const regionUrl = document.getElementById('reg-sel').value;
+    if(!regionUrl) return;
+    const r = await fetch(API + "?action=getQueues&regionUrl=" + encodeURIComponent(regionUrl));
     const data = await r.json();
     const sel = document.getElementById('q-sel');
-    sel.innerHTML = '';
-    data.forEach(item => sel.innerHTML += `<option value="${item.url}">${item.name}</option>`);
+    sel.innerHTML = data.map(i => `<option value="${i.url}">${i.name}</option>`).join('');
     document.getElementById('q-box').classList.remove('hidden');
   }
 
   async function save() {
     const q = document.getElementById('q-sel');
-    const url = q.value;
-    const name = q.options[q.selectedIndex].text;
-    await fetch(`${API}?action=saveSelection&chatId=${user.id}&url=${encodeURIComponent(url)}&name=${encodeURIComponent(name)}`);
+    await fetch(`${API}?action=saveSelection&chatId=${userId}&url=${encodeURIComponent(q.value)}&name=${encodeURIComponent(q.options[q.selectedIndex].text)}`);
     loadSched(0);
   }
 
@@ -85,17 +97,31 @@
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('t' + offset).classList.add('active');
 
-    const r = await fetch(`${API}?action=getSchedule&chatId=${user.id}&offset=${offset}`);
+    const r = await fetch(`${API}?action=getSchedule&chatId=${userId}&offset=${offset}`);
     const data = await r.json();
-    document.getElementById('status').innerText = data.status || "Немає даних";
+    
+    document.getElementById('status').innerText = data.status || "Дані оновлюються";
     
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
-    // Відображаємо 24 години
+    const nowH = new Date().getHours();
+
     for(let h=0; h<24; h++) {
-      const isOff = data.slots && data.slots[h] === 1;
-      grid.innerHTML += `<div class="hour ${isOff ? 'off' : 'on'}">${h}:00</div>`;
+      // Спрощена логіка: якщо хоча б одна півгодина в межах години "синя" (1), ставимо OFF
+      // На сайті зазвичай slots[h*2] та slots[h*2 + 1]
+      const idx = h * 2;
+      const isOff = data.slots && (data.slots[idx] === 1 || data.slots[idx+1] === 1);
+      
+      const div = document.createElement('div');
+      div.className = `hour ${isOff ? 'off' : ''} ${ (h === nowH && offset === 0) ? 'current' : ''}`;
+      div.innerText = `${h}:00`;
+      grid.appendChild(div);
     }
+  }
+
+  function showSetup() {
+    document.getElementById('setup-view').classList.remove('hidden');
+    document.getElementById('main-view').classList.add('hidden');
   }
 
   init();
