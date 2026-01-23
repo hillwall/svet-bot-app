@@ -276,17 +276,54 @@
     }
 
     async function loadRegions() {
-      try {
+    try {
         const res = await fetch(`${WEB_APP_URL}?action=getRegions`);
         const data = await res.json();
-        const sel = document.getElementById('region');
-        sel.innerHTML = '<option value="">-- Оберіть область --</option>';
-        data.forEach(r => sel.innerHTML += `<option value="${r.url}" data-name="${r.name}">${r.name}</option>`);
-      } catch (e) { 
-        alert("Помилка ініціалізації"); 
-      }
+        const regionSel = document.getElementById('region-select');
+        
+        regionSel.innerHTML = '<option value="">-- Оберіть область --</option>';
+        data.forEach(r => {
+            regionSel.innerHTML += `<option value="${r.url}">${r.name}</option>`;
+        });
+        regionSel.disabled = false;
+    } catch (e) {
+        console.error("Помилка завантаження областей:", e);
+    }
+}
+async function loadQueues() {
+    const regionUrl = document.getElementById('region-select').value;
+    const queueSel = document.getElementById('queue-select');
+    const queueContainer = document.getElementById('queue-container');
+
+    if (!regionUrl) {
+        queueContainer.style.display = 'none';
+        return;
     }
 
+    document.getElementById('queue-loader').style.display = 'block';
+    queueSel.disabled = true;
+
+    try {
+        // Використовуємо дію 'getChildren' та параметр 'url'
+        const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(regionUrl)}`);
+        const data = await res.json();
+        
+        queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
+        if (data && data.length > 0) {
+            data.forEach(q => {
+                queueSel.innerHTML += `<option value="${q.url}">${q.name}</option>`;
+            });
+            queueContainer.style.display = 'block';
+            queueSel.disabled = false;
+        } else {
+            alert("Черг для цієї області не знайдено");
+        }
+    } catch (e) {
+        alert("Помилка завантаження черг");
+    } finally {
+        document.getElementById('queue-loader').style.display = 'none';
+    }
+}
     async function onRegionChange() {
       const regionSel = document.getElementById('region');
       const url = regionSel.value;
@@ -351,7 +388,29 @@
         btn.innerText = "Зберегти вибір";
       }
     }
+async function save() {
+    const regionSel = document.getElementById('region-select');
+    const queueSel = document.getElementById('queue-select');
+    const btn = document.getElementById('save-btn');
+    
+    const chatId = tg.initDataUnsafe.user?.id || "197183975";
+    const queueUrl = queueSel.value;
+    const queueName = queueSel.options[queueSel.selectedIndex].text;
+    const regionUrl = regionSel.value;
 
+    btn.disabled = true;
+    btn.innerText = "Зберігаємо...";
+
+    try {
+        const url = `${WEB_APP_URL}?action=saveSelection&chatId=${chatId}&url=${encodeURIComponent(queueUrl)}&name=${encodeURIComponent(queueName)}&regionUrl=${encodeURIComponent(regionUrl)}`;
+        await fetch(url);
+        tg.close();
+    } catch (e) {
+        alert("Помилка при збереженні");
+        btn.disabled = false;
+        btn.innerText = "Зберегти налаштування";
+    }
+}
     function showSetup() {
       document.getElementById('setup-view').classList.add('active');
       document.getElementById('schedule-view').classList.remove('active');
