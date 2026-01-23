@@ -1,316 +1,204 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Світло Бот</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root {
-      --bg: var(--tg-theme-bg-color, #f0f2f5);
-      --card: var(--tg-theme-secondary-bg-color, #ffffff);
-      --text: var(--tg-theme-text-color, #222);
-      --hint: var(--tg-theme-hint-color, #777);
-      --accent: #2481cc;
-      --light-on: #e6e6a1;
-      --light-off: #00193a;
-      --white: #ffffff;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0; padding: 12px;
-      display: flex; flex-direction: column; min-height: 100vh;
-    }
-
-    .hidden { display: none !important; }
-    
-    /* Шапка */
-    .header-row { margin-bottom: 16px; }
-    .header-row h1 { margin: 0; font-size: 22px; font-weight: 800; }
-    .header-row p { margin: 4px 0 0 0; font-size: 14px; color: var(--hint); }
-
-    /* БЛОК СТАТУСУ (ЯК У ВІННИЦІ) */
-    .info-block {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      text-align: left;
-    }
-    .status-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-    .status-timer { font-size: 15px; color: var(--text); margin-bottom: 4px; }
-    .status-next { font-size: 14px; color: var(--hint); }
-
-    .status-on-text { color: #5a9900; }
-    .status-off-text { color: #d32f2f; }
-
-    /* Таби */
-    .tabs { display: flex; background: rgba(0,0,0,0.05); border-radius: 10px; padding: 3px; margin-bottom: 16px; }
-    .tab { flex: 1; text-align: center; padding: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 8px; color: var(--hint); }
-    .tab.active { background: var(--card); color: var(--text); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-
-    /* Сітка */
-    .schedule-card { background: var(--card); border-radius: 16px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-    .grid { 
-      display: flex; flex-wrap: wrap; 
-      /* Щоб виглядали як окремі блоки */
-      gap: 1px; 
-      background: #ccc; /* Колір ліній між блоками */
-      border: 1px solid #ccc;
-      border-radius: 8px; overflow: hidden; 
-    }
-
-    .hour {
-      width: calc(25% - 1px); /* Мінус gap */
-      height: 44px;
-      background-color: var(--light-on);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 500; color: #333;
-      position: relative;
-      flex-grow: 1;
-    }
-    
-    .hour.off-full { background-color: var(--light-off); color: var(--white); }
-    
-    /* Поточна година */
-    .hour.current { 
-      box-shadow: inset 0 0 0 2px #ff3b30; 
-      z-index: 5;
-    }
-
-    /* Налаштування */
-    select { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 12px; background: var(--card); font-size: 16px; }
-    .btn-main { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; }
-    .btn-link { background: none; border: none; width: 100%; padding: 15px; color: var(--hint); font-size: 14px; cursor: pointer; }
-    .loader { margin-top: 50px; text-align: center; color: var(--hint); }
-  </style>
+<style>
+:root {
+  --bg:#f3f4f6;
+  --card:#fff;
+  --accent:#2563eb;
+  --off:#0f172a;
+  --on:#fde68a;
+}
+body {
+  margin:0;
+  font-family:system-ui,-apple-system;
+  background:var(--bg);
+  padding:12px;
+}
+.card {
+  background:var(--card);
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:12px;
+}
+h2 {margin:0 0 10px}
+select,button {
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  font-size:15px;
+}
+button {
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  margin-top:8px;
+}
+.tabs {
+  display:flex;
+  gap:6px;
+}
+.tab {
+  flex:1;
+  padding:8px;
+  border-radius:8px;
+  background:#e5e7eb;
+  text-align:center;
+  font-weight:600;
+}
+.tab.active {
+  background:var(--card);
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+.grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+}
+.hour {
+  font-size:12px;
+  padding:6px;
+  border-radius:8px;
+  background:#fff;
+  text-align:center;
+}
+.off {background:var(--off);color:#fde68a}
+.on {background:var(--on)}
+.current {outline:3px solid var(--accent)}
+.status {
+  padding:12px;
+  border-radius:12px;
+  font-weight:600;
+  text-align:center;
+}
+.status.on {background:var(--on)}
+.status.off {background:var(--off);color:#fde68a}
+</style>
 </head>
+
 <body>
 
-  <div id="loader" class="loader">Завантаження...</div>
+<div id="step-select" class="card">
+  <h2>Оберіть область</h2>
+  <select id="region"></select>
 
-  <div id="setup-screen" class="hidden" style="text-align:center; padding-top:20px;">
-    <h2>Налаштування</h2>
-    <p style="color:var(--hint); margin-bottom:20px;">Оберіть область та чергу</p>
-    <select id="region-select" onchange="loadQueues()"><option value="">Завантаження...</option></select>
-    <div id="queue-block" class="hidden">
-      <select id="queue-select"><option value="">Оберіть чергу</option></select>
-      <button class="btn-main" onclick="saveConfig()">Зберегти</button>
-    </div>
-  </div>
+  <h2 style="margin-top:10px">Оберіть чергу</h2>
+  <select id="queue"></select>
 
-  <div id="view-screen" class="hidden">
-    
-    <div class="header-row">
-      <h1 id="view-queue">Черга ...</h1>
-      <p id="view-region">Область ...</p>
-    </div>
+  <button onclick="save()">Зберегти</button>
+</div>
 
-    <div id="status-card" class="info-block hidden">
-       <div id="status-header" class="status-title">Завантаження...</div>
-       <div id="status-timer" class="status-timer">...</div>
-       <div id="status-next" class="status-next">...</div>
-    </div>
+<div id="step-schedule" style="display:none">
 
+  <div class="card">
     <div class="tabs">
-      <div id="tab-0" class="tab active" onclick="loadSchedule(0)">Сьогодні <span id="date-today" style="font-weight:400; font-size:12px;"></span></div>
-      <div id="tab-1" class="tab" onclick="loadSchedule(1)">Завтра <span id="date-tomorrow" style="font-weight:400; font-size:12px;"></span></div>
+      <div class="tab active" onclick="load(0)" id="t0">Сьогодні</div>
+      <div class="tab" onclick="load(1)" id="t1">Завтра</div>
     </div>
-
-    <div class="schedule-card">
-      <div id="schedule-grid" class="grid"></div>
-      <div id="error-msg" style="text-align:center; color:red; margin-top:5px;"></div>
-    </div>
-
-    <button class="btn-link" onclick="showSetup()">⚙️ Змінити чергу</button>
   </div>
+
+  <div id="status" class="card status">Завантаження…</div>
+  <div id="grid" class="card grid"></div>
+
+</div>
 
 <script>
-  const tg = window.Telegram.WebApp;
-  tg.expand();
-  const userId = tg.initDataUnsafe?.user?.id || "TEST_USER";
-  
-  // 👇 ВСТАВ СВІЙ URL 👇
-  const API_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
+const tg = Telegram.WebApp;
+tg.expand();
 
-  let scheduleCache = null;
+const API_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
+const chatId = tg.initDataUnsafe.user?.id || "test";
 
-  async function callApi(action, params = {}) {
-    const url = new URL(API_URL);
-    url.searchParams.append('action', action);
-    for (const k in params) url.searchParams.append(k, params[k]);
-    try { return await (await fetch(url)).json(); } catch (e) { return { error: "Помилка мережі" }; }
+async function api(p){
+  const r = await fetch(API_URL + "?" + new URLSearchParams(p));
+  return r.json();
+}
+
+async function init(){
+  const regions = await api({action:"getRegions"});
+  const rSel = document.getElementById("region");
+  regions.forEach(r=>{
+    const o=document.createElement("option");
+    o.value=r.url; o.text=r.name;
+    rSel.appendChild(o);
+  });
+  loadQueues();
+}
+
+async function loadQueues(){
+  const regionUrl = region.value;
+  const qs = await api({action:"getQueues", region:regionUrl});
+  const qSel = document.getElementById("queue");
+  qSel.innerHTML="";
+  qs.forEach(q=>{
+    const o=document.createElement("option");
+    o.value=q.url; o.text=q.name;
+    qSel.appendChild(o);
+  });
+}
+region.onchange=loadQueues;
+
+async function save(){
+  const rName = region.options[region.selectedIndex].text;
+  const qName = queue.options[queue.selectedIndex].text;
+  const qUrl = queue.value;
+
+  await api({
+    action:"saveSelection",
+    chatId,
+    region_name:rName,
+    queue_name:qName,
+    queue_url:qUrl
+  });
+
+  document.getElementById("step-select").style.display="none";
+  document.getElementById("step-schedule").style.display="block";
+  load(0);
+}
+
+async function load(offset){
+  t0.classList.toggle("active",offset===0);
+  t1.classList.toggle("active",offset===1);
+
+  const d = await api({action:"getSchedule",chatId,offset});
+  if(d.error){
+    status.innerText=d.error;
+    return;
   }
 
-  window.onload = async () => {
-    const data = await callApi('getUserSchedule', { chatId: userId });
-    document.getElementById('loader').classList.add('hidden');
-    if (data && data.error === "UserNotFound") showSetup();
-    else if (data && !data.error) showView(data);
-    else showSetup();
-  };
+  status.className="card status "+(d.status.includes("ВІДСУТНЄ")?"off":"on");
+  status.innerHTML=d.status.replace(/\n/g,"<br>");
 
-  async function showSetup() {
-    document.getElementById('view-screen').classList.add('hidden');
-    document.getElementById('setup-screen').classList.remove('hidden');
-    const regions = await callApi('getRegions');
-    const rSel = document.getElementById('region-select');
-    rSel.innerHTML = '<option value="">Оберіть область</option>';
-    if (regions) regions.forEach(r => rSel.innerHTML += `<option value="${r.url}">${r.name}</option>`);
+  grid.innerHTML="";
+  const nowH=new Date().getHours();
+
+  for(let h=0;h<24;h++){
+    const cell=document.createElement("div");
+    cell.className="hour";
+    if(isOff(h,15,d.slots)&&isOff(h,45,d.slots)) cell.classList.add("off");
+    else cell.classList.add("on");
+    if(h===nowH && offset===0) cell.classList.add("current");
+    cell.innerText=`${String(h).padStart(2,"0")}-${String(h+1).padStart(2,"0")}`;
+    grid.appendChild(cell);
   }
+}
 
-  async function loadQueues() {
-    const url = document.getElementById('region-select').value;
-    if (!url) return;
-    const qs = await callApi('getChildren', { url });
-    const qSel = document.getElementById('queue-select');
-    qSel.innerHTML = '<option value="">Оберіть чергу</option>';
-    if (qs) qs.forEach(q => qSel.innerHTML += `<option value="${q.url}">${q.name}</option>`);
-    document.getElementById('queue-block').classList.remove('hidden');
-  }
+function isOff(h,m,slots){
+  const t=h*60+m;
+  return slots.some(s=>{
+    if(!s.isOutage) return false;
+    const a=s.start.split(":").map(Number);
+    const b=s.end==="00:00"?[24,0]:s.end.split(":").map(Number);
+    return t>=a[0]*60+a[1] && t<b[0]*60+b[1];
+  });
+}
 
-  async function saveConfig() {
-    const qSel = document.getElementById('queue-select');
-    if (!qSel.value) return alert("Оберіть чергу!");
-    document.getElementById('loader').classList.remove('hidden');
-    await callApi('saveSelection', { chatId: userId, url: qSel.value, name: qSel.options[qSel.selectedIndex].text });
-    location.reload();
-  }
-
-  function showView(data) {
-    document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('view-screen').classList.remove('hidden');
-    
-    document.getElementById('view-queue').innerText = data.queueName || "Черга";
-    document.getElementById('view-region').innerText = data.region || "Ваша область";
-    
-    // Зберігаємо дату для відображення в табах
-    window.loadedDate = data.dateStr; 
-    
-    renderGrid(data.schedule);
-    
-    // Запускаємо таймер тільки якщо це "Сьогодні"
-    if (document.getElementById('tab-0').classList.contains('active')) {
-      updateStatusBlock(data.schedule);
-    }
-  }
-  
-  async function loadSchedule(offset) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('tab-' + offset).classList.add('active');
-    
-    // Показуємо/ховаємо блок статусу "Зараз"
-    const statusCard = document.getElementById('status-card');
-    if (offset === 0) statusCard.classList.remove('hidden');
-    else statusCard.classList.add('hidden');
-
-    const grid = document.getElementById('schedule-grid');
-    grid.innerHTML = '<div style="width:100%;text-align:center;padding:20px;color:gray;">Оновлення...</div>';
-    
-    const res = await callApi('getUserSchedule', { chatId: userId, dateOffset: offset });
-    
-    if (res.schedule && res.schedule.error) {
-       grid.innerHTML = '';
-       document.getElementById('error-msg').innerText = res.schedule.error;
-    } else {
-       renderGrid(res.schedule);
-       
-       // Оновлюємо дату біля кнопки
-       const dateSpan = offset === 0 ? 'date-today' : 'date-tomorrow';
-       if (res.dateStr) document.getElementById(dateSpan).innerText = res.dateStr;
-       
-       if (offset === 0) updateStatusBlock(res.schedule);
-    }
-  }
-  function renderGrid(schedule) {
-    const grid = document.getElementById('schedule-grid');
-    grid.innerHTML = "";
-    document.getElementById('error-msg').innerText = "";
-    if (!schedule || !schedule.slots) return;
-
-    const currentHour = new Date().getHours();
-    const isToday = document.getElementById('tab-0').classList.contains('active');
-
-    for (let i = 0; i < 24; i++) {
-      const slot = schedule.slots.find(s => s.hour === i);
-      const div = document.createElement('div');
-      
-      let className = 'hour';
-      if (slot && slot.status === 'off') className += ' off-full';
-      if (isToday && i === currentHour) className += ' current';
-
-      div.className = className;
-      div.innerText = `${String(i).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;
-      grid.appendChild(div);
-    }
-  }
-
-  // 🔥 ЛОГІКА БЛОКУ СТАТУСУ ТА ТАЙМЕРА
-  // --- ФУНКЦІЯ ТАЙМЕРА (З ВІННИЦІ) ---
-  function updateStatusBlock(schedule) {
-    if (!schedule || !schedule.slots) return;
-
-    const now = new Date();
-    const curH = now.getHours();
-    const curM = now.getMinutes();
-
-    // Знаходимо поточний слот
-    const currentSlot = schedule.slots.find(s => s.hour === curH);
-    const isOff = currentSlot && currentSlot.status === 'off';
-
-    const header = document.getElementById('status-header');
-    const timer = document.getElementById('status-timer');
-    const nextMsg = document.getElementById('status-next');
-    
-    // 1. Статус заголовок
-    if (isOff) {
-      header.innerHTML = `🌚 Зараз світло <span class="status-off-text">ВІДСУТНЄ</span>`;
-    } else {
-      header.innerHTML = `🌝 Зараз світло <span class="status-on-text">Є</span>`;
-    }
-
-    // 2. Шукаємо час зміни
-    let changeHour = -1;
-    // Проходимо по годинах, починаючи з наступної
-    for (let h = curH + 1; h < 24; h++) {
-      const slot = schedule.slots.find(s => s.hour === h);
-      const nextIsOff = slot && slot.status === 'off';
-      if (nextIsOff !== isOff) {
-        changeHour = h;
-        break;
-      }
-    }
-
-    // 3. Рахуємо час
-    if (changeHour !== -1) {
-      const diffHr = changeHour - curH - 1; 
-      const diffMin = 60 - curM;
-      // Сума хвилин
-      const totalMin = (diffHr * 60) + diffMin;
-      
-      const leftH = Math.floor(totalMin / 60);
-      const leftM = totalMin % 60;
-
-      let timeStr = "";
-      if (leftH > 0) timeStr += `${leftH} год `;
-      timeStr += `${leftM} хв`;
-
-      timer.innerText = `Залишилося: ${timeStr}`;
-      
-      const action = isOff ? "Увімкнення" : "Вимкнення";
-      nextMsg.innerText = `${action} о ${String(changeHour).padStart(2,'0')}:00`;
-    } else {
-      timer.innerText = "Без змін до кінця доби";
-      nextMsg.innerText = "";
-    }
-    
-    // Показуємо блок
-    document.getElementById('status-card').classList.remove('hidden');
-  }
+init();
 </script>
 </body>
 </html>
