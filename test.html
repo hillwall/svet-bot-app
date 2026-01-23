@@ -1,130 +1,161 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root { 
-      --bg: var(--tg-theme-bg-color, #ffffff); 
-      --text: var(--tg-theme-text-color, #222); 
-      --accent: #2481cc;
-      --color-off: #00193a;
-      --color-on: #e6e6a1;
-    }
-    body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 15px; margin: 0; }
-    .card { background: var(--tg-theme-secondary-bg-color, #f0f2f5); padding: 15px; border-radius: 15px; margin-bottom: 15px; }
-    select, button { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1px solid #ccc; font-size: 16px; }
-    button { background: var(--accent); color: white; border: none; font-weight: bold; }
-    
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .hour { 
-      font-size: 12px; text-align: center; padding: 12px 5px; border-radius: 8px; 
-      font-weight: bold; background: var(--color-on); color: #000;
-    }
-    .hour.off { background: var(--color-off); color: #fff; }
-    .hour.current { border: 2px solid var(--accent); box-shadow: 0 0 5px var(--accent); }
-
-    .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
-    .tab { flex: 1; padding: 12px; text-align: center; background: #eee; border-radius: 10px; cursor: pointer; font-weight: bold; }
-    .tab.active { background: var(--accent); color: white; }
-    .hidden { display: none; }
-    label { font-size: 12px; color: var(--tg-theme-hint-color); font-weight: bold; margin-left: 5px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: var(--tg-theme-bg-color, #ffffff);
+            --text: var(--tg-theme-text-color, #222222);
+            --hint: var(--tg-theme-hint-color, #999999);
+            --btn-bg: var(--tg-theme-button-color, #2481cc);
+            --btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --secondary: var(--tg-theme-secondary-bg-color, #f0f2f5);
+        }
+        body { 
+            font-family: sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text); 
+            padding: 20px; 
+            margin: 0;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-size: 14px; 
+            color: var(--hint); 
+            font-weight: bold; 
+        }
+        select { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 10px; 
+            border: 1px solid #ccc; 
+            background: var(--secondary); 
+            color: var(--text); 
+            font-size: 16px; 
+            outline: none; 
+        }
+        select:disabled { opacity: 0.4; }
+        .btn { 
+            background: var(--btn-bg); 
+            color: var(--btn-text); 
+            border: none; 
+            padding: 18px; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            width: 100%; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 10px; 
+        }
+        .btn:disabled { 
+            background: #ccc; 
+            color: #888; 
+        }
+        .loader { 
+            font-size: 12px; 
+            color: var(--btn-bg); 
+            display: none; 
+            margin-top: 5px; 
+        }
+    </style>
 </head>
 <body>
+    <div id="app">
+        <h3 style="margin-top:0">🔧 Налаштування графіку</h3>
+        
+        <div class="form-group">
+            <label>1. ОБЕРІТЬ ОБЛАСТЬ</label>
+            <select id="region" onchange="onRegionChange()">
+                <option value="">Завантаження...</option>
+            </select>
+        </div>
 
-  <div id="setup-view">
-    <h3 style="margin-top:0">🌍 Вибір черги</h3>
-    <label>ОБЛАСТЬ</label>
-    <select id="reg-sel" onchange="loadQueues()"><option>Завантаження областей...</option></select>
-    
-    <div id="q-box" class="hidden">
-      <label>ЧЕРГА / ГРУПА</label>
-      <select id="q-sel"></select>
-      <button onclick="save()">Зберегти та завантажити</button>
+        <div class="form-group">
+            <label>2. ОБЕРІТЬ ЧЕРГУ / ГРУПУ</label>
+            <div id="queue-loader" class="loader">Завантажуємо черги...</div>
+            <select id="queue" disabled onchange="validate()">
+                <option value="">Спочатку оберіть область</option>
+            </select>
+        </div>
+
+        <button id="save-btn" class="btn" disabled onclick="save()">Зберегти вибір</button>
     </div>
-  </div>
 
-  <div id="main-view" class="hidden">
-    <div class="tabs">
-      <div id="t0" class="tab active" onclick="loadSched(0)">Сьогодні</div>
-      <div id="t1" class="tab" onclick="loadSched(1)">Завтра</div>
-    </div>
-    
-    <div class="card">
-      <h2 id="status" style="margin-top:0; text-align:center">Завантаження...</h2>
-      <div id="grid" class="grid"></div>
-    </div>
-    
-    <button onclick="showSetup()" style="background:none; color:var(--accent); border:1px solid var(--accent)">⚙️ Налаштування</button>
-  </div>
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
+        let tg = window.Telegram.WebApp;
+        tg.expand();
 
-<script>
-  const tg = window.Telegram.WebApp;
-  const API = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
-  const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "197183975";
+        async function init() {
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getRegions`);
+                const data = await res.json();
+                const sel = document.getElementById('region');
+                sel.innerHTML = '<option value="">-- Оберіть область --</option>';
+                data.forEach(r => sel.innerHTML += `<option value="${r.url}">${r.name}</option>`);
+            } catch (e) { 
+                alert("Помилка ініціалізації"); 
+            }
+        }
 
-  async function init() {
-    tg.expand();
-    try {
-      const r = await fetch(API + "?action=getRegions");
-      const data = await r.json();
-      const sel = document.getElementById('reg-sel');
-      sel.innerHTML = '<option value="">-- Оберіть область --</option>';
-      data.forEach(i => sel.innerHTML += `<option value="${i.url}">${i.name}</option>`);
-    } catch(e) { alert("Помилка мережі"); }
-  }
+        async function onRegionChange() {
+            const url = document.getElementById('region').value;
+            const queueSel = document.getElementById('queue');
+            queueSel.innerHTML = '<option value="">Завантаження...</option>';
+            queueSel.disabled = true;
+            validate();
 
-  async function loadQueues() {
-    const regionUrl = document.getElementById('reg-sel').value;
-    if(!regionUrl) return;
-    const r = await fetch(API + "?action=getQueues&regionUrl=" + encodeURIComponent(regionUrl));
-    const data = await r.json();
-    const sel = document.getElementById('q-sel');
-    sel.innerHTML = data.map(i => `<option value="${i.url}">${i.name}</option>`).join('');
-    document.getElementById('q-box').classList.remove('hidden');
-  }
+            if (!url) return;
+            document.getElementById('queue-loader').style.display = 'block';
 
-  async function save() {
-    const q = document.getElementById('q-sel');
-    await fetch(`${API}?action=saveSelection&chatId=${userId}&url=${encodeURIComponent(q.value)}&name=${encodeURIComponent(q.options[q.selectedIndex].text)}`);
-    loadSched(0);
-  }
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getChildren&url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+                if (data.length > 0) {
+                    queueSel.innerHTML = '<option value="">-- Оберіть чергу --</option>';
+                    data.forEach(q => queueSel.innerHTML += `<option value="${q.url}" data-name="${q.name}">${q.name}</option>`);
+                    queueSel.disabled = false;
+                } else {
+                    queueSel.innerHTML = '<option value="">Черг не знайдено</option>';
+                }
+            } catch (e) { 
+                alert("Помилка завантаження черг"); 
+            } finally { 
+                document.getElementById('queue-loader').style.display = 'none'; 
+            }
+        }
 
-  async function loadSched(offset) {
-    document.getElementById('setup-view').classList.add('hidden');
-    document.getElementById('main-view').classList.remove('hidden');
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('t' + offset).classList.add('active');
+        function validate() {
+            const queueValue = document.getElementById('queue').value;
+            document.getElementById('save-btn').disabled = (queueValue === "");
+        }
 
-    const r = await fetch(`${API}?action=getSchedule&chatId=${userId}&offset=${offset}`);
-    const data = await r.json();
-    
-    document.getElementById('status').innerText = data.status || "Дані оновлюються";
-    
-    const grid = document.getElementById('grid');
-    grid.innerHTML = '';
-    const nowH = new Date().getHours();
+        async function save() {
+            const queueSel = document.getElementById('queue');
+            const finalUrl = queueSel.value;
+            const finalName = queueSel.selectedOptions[0]?.text;
+            const chatId = tg.initDataUnsafe.user?.id || "197183975";
 
-    for(let h=0; h<24; h++) {
-      // Спрощена логіка: якщо хоча б одна півгодина в межах години "синя" (1), ставимо OFF
-      // На сайті зазвичай slots[h*2] та slots[h*2 + 1]
-      const idx = h * 2;
-      const isOff = data.slots && (data.slots[idx] === 1 || data.slots[idx+1] === 1);
-      
-      const div = document.createElement('div');
-      div.className = `hour ${isOff ? 'off' : ''} ${ (h === nowH && offset === 0) ? 'current' : ''}`;
-      div.innerText = `${h}:00`;
-      grid.appendChild(div);
-    }
-  }
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true;
+            btn.innerText = "Зберігаємо...";
 
-  function showSetup() {
-    document.getElementById('setup-view').classList.remove('hidden');
-    document.getElementById('main-view').classList.add('hidden');
-  }
-
-  init();
-</script>
+            await fetch(`${WEB_APP_URL}?action=saveSelection&chatId=${chatId}&url=${encodeURIComponent(finalUrl)}&name=${encodeURIComponent(finalName)}`);
+            
+            // Відправляємо дані назад в бот
+            tg.sendData(JSON.stringify({
+                queue: finalName,
+                url: finalUrl
+            }));
+            
+            tg.close();
+        }
+        
+        init();
+    </script>
 </body>
 </html>
