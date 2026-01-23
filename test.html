@@ -389,24 +389,34 @@ async function loadQueues() {
       }
     }
 async function save() {
-    const regionSel = document.getElementById('region-select');
-    const queueSel = document.getElementById('queue-select');
+    const regSel = document.getElementById('region-select'); // Переконайся що ID збігається
+    const queueSel = document.getElementById('queue-select'); 
     const btn = document.getElementById('save-btn');
     
     const chatId = tg.initDataUnsafe.user?.id || "197183975";
-    const queueUrl = queueSel.value;
-    const queueName = queueSel.options[queueSel.selectedIndex].text;
-    const regionUrl = regionSel.value;
+    const qUrl = queueSel.value;
+    const qName = queueSel.options[queueSel.selectedIndex].text;
+    const rName = regSel.options[regSel.selectedIndex].text; // Отримуємо назву області
+
+    if (!qUrl) {
+        alert("Оберіть чергу!");
+        return;
+    }
 
     btn.disabled = true;
     btn.innerText = "Зберігаємо...";
 
     try {
-        const url = `${WEB_APP_URL}?action=saveSelection&chatId=${chatId}&url=${encodeURIComponent(queueUrl)}&name=${encodeURIComponent(queueName)}&regionUrl=${encodeURIComponent(regionUrl)}`;
-        await fetch(url);
-        tg.close();
+        // Формуємо запит з усіма параметрами
+        const query = `?action=saveSelection&chatId=${chatId}&url=${encodeURIComponent(qUrl)}&name=${encodeURIComponent(qName)}&region=${encodeURIComponent(rName)}`;
+        const response = await fetch(WEB_APP_URL + query);
+        const result = await response.json();
+        
+        if (result.success) {
+            tg.close(); // Закриваємо Mini App після успіху
+        }
     } catch (e) {
-        alert("Помилка при збереженні");
+        alert("Помилка збереження: " + e.message);
         btn.disabled = false;
         btn.innerText = "Зберегти налаштування";
     }
