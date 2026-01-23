@@ -188,42 +188,44 @@
     document.getElementById('view-queue').innerText = data.queueName || "Черга";
     document.getElementById('view-region').innerText = data.region || "Ваша область";
     
-    // Встановлюємо дату в таб (Сьогодні)
-    if(data.dateStr) document.getElementById('date-today').innerText = data.dateStr;
+    // Зберігаємо дату для відображення в табах
+    window.loadedDate = data.dateStr; 
     
-    scheduleCache = data.schedule; // Зберігаємо для розрахунків
     renderGrid(data.schedule);
-    updateStatusBlock(data.schedule); // Запускаємо блок статусу
     
-    // Запускаємо таймер оновлення статусу щохвилини
-    setInterval(() => updateStatusBlock(scheduleCache), 60000);
+    // Запускаємо таймер тільки якщо це "Сьогодні"
+    if (document.getElementById('tab-0').classList.contains('active')) {
+      updateStatusBlock(data.schedule);
+    }
   }
-
+  
   async function loadSchedule(offset) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + offset).classList.add('active');
     
-    // Якщо "Сьогодні" - показуємо статус, якщо "Завтра" - ховаємо
+    // Показуємо/ховаємо блок статусу "Зараз"
     const statusCard = document.getElementById('status-card');
-    if(offset === 0) statusCard.classList.remove('hidden'); else statusCard.classList.add('hidden');
+    if (offset === 0) statusCard.classList.remove('hidden');
+    else statusCard.classList.add('hidden');
 
     const grid = document.getElementById('schedule-grid');
     grid.innerHTML = '<div style="width:100%;text-align:center;padding:20px;color:gray;">Оновлення...</div>';
     
     const res = await callApi('getUserSchedule', { chatId: userId, dateOffset: offset });
+    
     if (res.schedule && res.schedule.error) {
        grid.innerHTML = '';
        document.getElementById('error-msg').innerText = res.schedule.error;
     } else {
-       if(offset === 0) scheduleCache = res.schedule; // Оновлюємо кеш тільки для сьогодні
        renderGrid(res.schedule);
        
-       // Оновлюємо дату в табі
+       // Оновлюємо дату біля кнопки
        const dateSpan = offset === 0 ? 'date-today' : 'date-tomorrow';
-       if(res.dateStr) document.getElementById(dateSpan).innerText = res.dateStr;
+       if (res.dateStr) document.getElementById(dateSpan).innerText = res.dateStr;
+       
+       if (offset === 0) updateStatusBlock(res.schedule);
     }
   }
-
   function renderGrid(schedule) {
     const grid = document.getElementById('schedule-grid');
     grid.innerHTML = "";
@@ -248,63 +250,66 @@
   }
 
   // 🔥 ЛОГІКА БЛОКУ СТАТУСУ ТА ТАЙМЕРА
+  // --- ФУНКЦІЯ ТАЙМЕРА (З ВІННИЦІ) ---
   function updateStatusBlock(schedule) {
     if (!schedule || !schedule.slots) return;
-    
-    // Перевірка, чи ми на вкладці "Сьогодні"
-    if (!document.getElementById('tab-0').classList.contains('active')) return;
 
     const now = new Date();
-    const currentHour = now.getHours();
-    const currentMin = now.getMinutes();
+    const curH = now.getHours();
+    const curM = now.getMinutes();
 
-    const slot = schedule.slots.find(s => s.hour === currentHour);
-    const isOff = slot && slot.status === 'off';
+    // Знаходимо поточний слот
+    const currentSlot = schedule.slots.find(s => s.hour === curH);
+    const isOff = currentSlot && currentSlot.status === 'off';
 
     const header = document.getElementById('status-header');
     const timer = document.getElementById('status-timer');
-    const nextText = document.getElementById('status-next');
-    const card = document.getElementById('status-card');
+    const nextMsg = document.getElementById('status-next');
     
-    card.classList.remove('hidden');
-
+    // 1. Статус заголовок
     if (isOff) {
       header.innerHTML = `🌚 Зараз світло <span class="status-off-text">ВІДСУТНЄ</span>`;
     } else {
       header.innerHTML = `🌝 Зараз світло <span class="status-on-text">Є</span>`;
     }
 
-    // Шукаємо, коли зміниться статус
+    // 2. Шукаємо час зміни
     let changeHour = -1;
-    for (let i = currentHour + 1; i < 24; i++) {
-      const nextSlot = schedule.slots.find(s => s.hour === i);
-      const nextIsOff = nextSlot && nextSlot.status === 'off';
+    // Проходимо по годинах, починаючи з наступної
+    for (let h = curH + 1; h < 24; h++) {
+      const slot = schedule.slots.find(s => s.hour === h);
+      const nextIsOff = slot && slot.status === 'off';
       if (nextIsOff !== isOff) {
-        changeHour = i;
+        changeHour = h;
         break;
       }
     }
 
+    // 3. Рахуємо час
     if (changeHour !== -1) {
-      // Рахуємо хвилини
-      const diffHrs = changeHour - currentHour;
-      const totalMins = (diffHrs * 60) - currentMin;
+      const diffHr = changeHour - curH - 1; 
+      const diffMin = 60 - curM;
+      // Сума хвилин
+      const totalMin = (diffHr * 60) + diffMin;
       
-      const hrsLeft = Math.floor(totalMins / 60);
-      const minsLeft = totalMins % 60;
-      
-      let timeLeftStr = "";
-      if (hrsLeft > 0) timeLeftStr += `${hrsLeft} год `;
-      timeLeftStr += `${minsLeft} хв`;
+      const leftH = Math.floor(totalMin / 60);
+      const leftM = totalMin % 60;
 
-      timer.innerText = `Залишилося: ${timeLeftStr}`;
+      let timeStr = "";
+      if (leftH > 0) timeStr += `${leftH} год `;
+      timeStr += `${leftM} хв`;
+
+      timer.innerText = `Залишилося: ${timeStr}`;
       
       const action = isOff ? "Увімкнення" : "Вимкнення";
-      nextText.innerText = `${action} о ${String(changeHour).padStart(2,'0')}:00`;
+      nextMsg.innerText = `${action} о ${String(changeHour).padStart(2,'0')}:00`;
     } else {
       timer.innerText = "Без змін до кінця доби";
-      nextText.innerText = "";
+      nextMsg.innerText = "";
     }
+    
+    // Показуємо блок
+    document.getElementById('status-card').classList.remove('hidden');
   }
 </script>
 </body>
