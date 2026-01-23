@@ -5,191 +5,208 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    /* Стилі ідентичні Вінницьким, адаптовані під темну/світлу тему */
     :root {
       --bg-color: var(--tg-theme-bg-color, #fff);
       --text-color: var(--tg-theme-text-color, #000);
-      --button-color: var(--tg-theme-button-color, #2481cc);
+      --button-bg: var(--tg-theme-button-color, #2481cc);
       --button-text: var(--tg-theme-button-text-color, #fff);
       --secondary-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
     }
-    body { font-family: sans-serif; background: var(--bg-color); color: var(--text-color); padding: 20px; }
+    body { font-family: sans-serif; background: var(--bg-color); color: var(--text-color); padding: 16px; margin: 0; }
     .hidden { display: none; }
-    select, button { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; background: var(--secondary-bg); color: var(--text-color); font-size: 16px; }
-    button { background: var(--button-color); color: var(--button-text); border: none; font-weight: bold; cursor: pointer; }
     
-    /* Стилі для сітки графіка (з Вінницького файлу) */
-    .grid { display: flex; flex-wrap: wrap; margin-top: 20px; }
-    .hour { width: 4.16%; height: 40px; border: 1px solid #eee; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 10px; }
-    .status-on { background-color: #e6e6a1; color: #000; } /* Світло є */
-    .status-off { background-color: #333; color: #fff; } /* Світла немає */
+    /* Елементи форм */
+    select { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #ccc; background: var(--secondary-bg); color: var(--text-color); font-size: 16px; -webkit-appearance: none; }
+    button { width: 100%; padding: 14px; border-radius: 10px; border: none; background: var(--button-bg); color: var(--button-text); font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px;}
     
-    h2, h3 { text-align: center; }
+    /* Графік */
+    .grid { display: flex; flex-wrap: wrap; margin-top: 20px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+    .hour { width: 4.16%; height: 45px; display: flex; align-items: center; justify-content: center; font-size: 10px; border-right: 1px solid #eee; box-sizing: border-box; }
+    .hour:last-child { border-right: none; }
+    
+    .status-on { background-color: #e6e6a1; color: #333; } /* Світло є */
+    .status-off { background-color: #2c2c2c; color: #fff; } /* Світла немає */
+    
+    .header { text-align: center; margin-bottom: 20px; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    .tabs button { flex: 1; margin: 0; background: var(--secondary-bg); color: var(--text-color); }
+    .tabs button.active { background: var(--button-bg); color: var(--button-text); }
   </style>
 </head>
 <body>
 
+  <div id="loader" style="text-align:center; margin-top: 50px;">Завантаження...</div>
+
   <div id="setup-screen" class="hidden">
-    <h3>Оберіть область та чергу</h3>
-    <select id="region-select"><option value="">Завантаження областей...</option></select>
-    <select id="queue-select" class="hidden"><option value="">Спочатку оберіть область</option></select>
-    <button id="save-btn" class="hidden" onclick="saveConfig()">Зберегти</button>
+    <div class="header"><h3>Налаштування</h3></div>
+    <p>Оберіть вашу область:</p>
+    <select id="region-select" onchange="loadQueues()"><option value="">Завантаження...</option></select>
+    
+    <div id="queue-block" class="hidden">
+      <p>Оберіть вашу чергу/групу:</p>
+      <select id="queue-select"><option value="">Спочатку оберіть область</option></select>
+      <button onclick="saveConfig()">Зберегти</button>
+    </div>
   </div>
 
   <div id="schedule-screen" class="hidden">
-    <h2 id="user-queue-title">Ваша черга</h2>
-    <div style="display:flex; gap:10px;">
-      <button onclick="loadSchedule(0)">Сьогодні</button>
-      <button onclick="loadSchedule(1)">Завтра</button>
+    <div class="header">
+      <h2 id="region-title" style="margin:0; font-size:18px;"></h2>
+      <p id="queue-title" style="margin:5px 0; color: gray;"></p>
     </div>
-    <div id="schedule-container" class="grid"></div>
-    <p id="status-msg" style="text-align:center; margin-top:20px; color: gray;"></p>
-    <button onclick="showSetup()" style="margin-top:30px; background: #555;">Змінити чергу</button>
+
+    <div class="tabs">
+      <button id="btn-today" class="active" onclick="switchDay(0)">Сьогодні</button>
+      <button id="btn-tomorrow" onclick="switchDay(1)">Завтра</button>
+    </div>
+
+    <div id="schedule-grid" class="grid"></div>
+    <p id="msg-box" style="text-align:center; margin-top:20px; color: #777;"></p>
+
+    <button onclick="showSetup()" style="background: transparent; color: var(--text-color); border: 1px solid #ccc; margin-top:30px;">⚙️ Змінити налаштування</button>
   </div>
 
 <script>
   const tg = window.Telegram.WebApp;
   tg.expand();
-  const userId = tg.initDataUnsafe?.user?.id;
-  // const userId = "197183975"; // Для тестів у браузері розкоментуй
+  const userId = tg.initDataUnsafe?.user?.id || "TEST_USER"; // Фолбек для браузера
 
-  function run() {
-    // 1. Перевіряємо, чи є у користувача збережена черга
-    google.script.run.withSuccessHandler(userData => {
-      if (userData && userData.queueUrl) {
-        showScheduleScreen(userData);
-      } else {
-        showSetup();
-      }
-    }).getUserData(userId);
-  }
+  // URL до твого скрипта (потрібен для fetch запитів)
+  // Встав сюди той самий URL, що і в Code.gs const WEB_APP_URL
+  const API_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
 
-  // --- ЛОГІКА НАЛАШТУВАННЯ ---
-  function showSetup() {
-    document.getElementById('schedule-screen').classList.add('hidden');
-    document.getElementById('setup-screen').classList.remove('hidden');
-    loadRegions();
-  }
-
-  function loadRegions() {
-    google.script.run.withSuccessHandler(regions => {
-      const sel = document.getElementById('region-select');
-      sel.innerHTML = '<option value="">Оберіть область</option>';
-      regions.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = r.url;
-        opt.text = r.name;
-        sel.appendChild(opt);
-      });
-      sel.onchange = () => loadQueues(sel.value, sel.options[sel.selectedIndex].text);
-    }).doGet({ parameter: { action: 'getRegions' } }); // Виклик серверної функції через обгортку або прямий запит
-    // Примітка: через google.script.run ми не можемо передавати об'єкт event, тому треба адаптувати сервер
-    // АБО використовувати fetch до WebApp URL. 
-    // ДЛЯ ПРОСТОТИ: використовуємо fetch, бо це Mini App.
-  }
-  
-  // Хак для виклику doGet через google.script.run не працює напряму з параметрами e.
-  // Тому краще використовувати fetch до deployed Web App URL
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec";
-
-  function api(action, params = {}) {
-    const url = new URL(WEB_APP_URL);
+  // --- API HELPER ---
+  async function api(action, params = {}) {
+    const url = new URL(API_URL);
     url.searchParams.append('action', action);
     for (const key in params) url.searchParams.append(key, params[key]);
-    return fetch(url).then(res => res.json());
-  }
-
-  // Переписуємо loadRegions з fetch
-  function loadRegions() {
-    api('getRegions').then(regions => {
-      const sel = document.getElementById('region-select');
-      sel.innerHTML = '<option value="">Оберіть область</option>';
-      regions.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = r.url;
-        opt.text = r.name;
-        sel.appendChild(opt);
-      });
-      sel.onchange = () => loadQueues(sel.value, sel.options[sel.selectedIndex].text);
-    });
-  }
-
-  function loadQueues(parentUrl, regionName) {
-    if(!parentUrl) return;
-    window.selectedRegion = regionName;
-    api('getChildren', { url: parentUrl }).then(children => {
-      const sel = document.getElementById('queue-select');
-      sel.classList.remove('hidden');
-      sel.innerHTML = '<option value="">Оберіть чергу</option>';
-      children.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.url;
-        opt.text = c.name;
-        sel.appendChild(opt);
-      });
-      sel.onchange = () => {
-        document.getElementById('save-btn').classList.remove('hidden');
-      };
-    });
-  }
-
-  function saveConfig() {
-    const qSel = document.getElementById('queue-select');
-    const qUrl = qSel.value;
-    const qName = qSel.options[qSel.selectedIndex].text;
     
-    api('saveUserConfig', {
-      chatId: userId,
-      region: window.selectedRegion,
-      queueName: qName,
-      queueUrl: qUrl
-    }).then(res => {
-      if(res.success) {
-        // Перезавантажуємо сторінку або переходимо до графіка
-        location.reload(); 
-      }
-    });
-  }
-
-  // --- ЛОГІКА ВІДОБРАЖЕННЯ ---
-  function showScheduleScreen(user) {
-    document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('schedule-screen').classList.remove('hidden');
-    document.getElementById('user-queue-title').innerText = `${user.region} - ${user.queueName}`;
-    loadSchedule(0);
-  }
-
-  function loadSchedule(offset) {
-    document.getElementById('status-msg').innerText = "Завантаження...";
-    document.getElementById('schedule-container').innerHTML = "";
-    
-    api('getUserSchedule', { chatId: userId, dateOffset: offset }).then(data => {
-      document.getElementById('status-msg').innerText = "";
-      if(data.schedule.error) {
-        document.getElementById('status-msg').innerText = data.schedule.error;
-        return;
-      }
-      renderGrid(data.schedule.slots);
-    });
-  }
-
-  function renderGrid(slots) {
-    const container = document.getElementById('schedule-container');
-    container.innerHTML = "";
-    // Припустимо slots = [{hour: 0, status: 'on'}, ...]
-    // Спрощена візуалізація. В робочому Вінницькому скрипті вона складніша.
-    for(let i=0; i<24; i++) {
-        const slot = slots.find(s => s.hour === i);
-        const div = document.createElement('div');
-        div.className = 'hour ' + (slot && slot.status === 'on' ? 'status-on' : 'status-off');
-        div.innerText = i;
-        container.appendChild(div);
+    try {
+      const res = await fetch(url);
+      return await res.json();
+    } catch (e) {
+      alert("Помилка з'єднання: " + e.message);
+      return null;
     }
   }
 
-  // Старт
-  run(); 
-  // (Але через те, що userId з initDataUnsafe може бути недоступний при прямому відкритті,
-  // краще тестувати це всередині Telegram)
+  // --- INIT ---
+  window.onload = async () => {
+    // Перевіряємо, чи є збережені дані (спробуємо завантажити графік)
+    // Якщо графік вертає "User not found" -> показуємо налаштування
+    const res = await api('getUserSchedule', { chatId: userId });
+    
+    document.getElementById('loader').classList.add('hidden');
+    
+    if (res && !res.error) {
+      // Користувач є, показуємо графік
+      showScheduleScreen(res);
+    } else {
+      // Користувача немає, показуємо налаштування
+      showSetup();
+    }
+  };
+
+  // --- SETUP LOGIC ---
+  async function showSetup() {
+    document.getElementById('schedule-screen').classList.add('hidden');
+    document.getElementById('setup-screen').classList.remove('hidden');
+    
+    const regions = await api('getRegions');
+    const sel = document.getElementById('region-select');
+    sel.innerHTML = '<option value="">Оберіть область</option>';
+    regions.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.url;
+      opt.text = r.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  async function loadQueues() {
+    const rSel = document.getElementById('region-select');
+    const url = rSel.value;
+    if (!url) return;
+    
+    const qs = await api('getChildren', { url: url });
+    const qSel = document.getElementById('queue-select');
+    qSel.innerHTML = '<option value="">Оберіть чергу</option>';
+    qs.forEach(q => {
+      const opt = document.createElement('option');
+      opt.value = q.url;
+      opt.text = q.name;
+      qSel.appendChild(opt);
+    });
+    document.getElementById('queue-block').classList.remove('hidden');
+  }
+
+  async function saveConfig() {
+    const rSel = document.getElementById('region-select');
+    const qSel = document.getElementById('queue-select');
+    
+    if (!qSel.value) return alert("Оберіть чергу!");
+    
+    document.getElementById('loader').classList.remove('hidden');
+    document.getElementById('setup-screen').classList.add('hidden');
+    
+    await api('saveUserConfig', {
+      chatId: userId,
+      region: rSel.options[rSel.selectedIndex].text,
+      queueName: qSel.options[qSel.selectedIndex].text,
+      queueUrl: qSel.value
+    });
+    
+    location.reload(); // Перезавантажуємо, щоб відкрити графік
+  }
+
+  // --- SCHEDULE LOGIC ---
+  let currentScheduleData = null;
+
+  function showScheduleScreen(data) {
+    document.getElementById('schedule-screen').classList.remove('hidden');
+    document.getElementById('region-title').innerText = data.region;
+    document.getElementById('queue-title').innerText = data.queueName;
+    
+    renderGrid(data.schedule);
+  }
+
+  async function switchDay(offset) {
+    document.getElementById('btn-today').className = offset === 0 ? 'active' : '';
+    document.getElementById('btn-tomorrow').className = offset === 1 ? 'active' : '';
+    
+    document.getElementById('schedule-grid').innerHTML = '<div style="width:100%; text-align:center; padding:20px;">Завантаження...</div>';
+    document.getElementById('msg-box').innerText = "";
+
+    const res = await api('getUserSchedule', { chatId: userId, dateOffset: offset });
+    renderGrid(res.schedule);
+  }
+
+  function renderGrid(schedule) {
+    const grid = document.getElementById('schedule-grid');
+    grid.innerHTML = "";
+    
+    if (schedule.error) {
+      grid.innerHTML = `<div style="padding:20px; width:100%; text-align:center;">${schedule.error}</div>`;
+      return;
+    }
+
+    const slots = schedule.slots || [];
+    for (let i = 0; i < 24; i++) {
+      const slot = slots.find(s => s.hour === i);
+      const div = document.createElement('div');
+      div.className = 'hour';
+      
+      if (slot && slot.status === 'off') {
+        div.classList.add('status-off');
+      } else {
+        div.classList.add('status-on');
+      }
+      
+      div.innerText = i;
+      grid.appendChild(div);
+    }
+  }
 </script>
 </body>
 </html>
