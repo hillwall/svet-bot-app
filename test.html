@@ -29,8 +29,10 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 
 const user = tg.initDataUnsafe?.user;
+
 if (!user || !user.id) {
-  alert("❌ Помилка: Mini App відкрито не з Telegram");
+  document.body.innerHTML = "❌ Відкрийте Mini App через Telegram кнопку";
+  throw new Error("NO_TG_CONTEXT");
 }
 
 // ⚠️ ЗАМІНИ НА СВІЙ TEST GAS URL
