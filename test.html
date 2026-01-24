@@ -335,21 +335,28 @@
       btn.disabled = true;
       btn.innerText = "Зберігаємо...";
 
-      await fetch(`${WEB_APP_URL}?action=saveSelection&chatId=${userId}&url=${encodeURIComponent(queueUrl)}&name=${encodeURIComponent(queueName)}`);
-      
-      // Відправляємо дані назад в бот
-      tg.sendData(JSON.stringify({
-        action: "saveQueue",
-        queue: queueName,
-        url: queueUrl,
-        region: regionName
-      }));
-      
-      // Переходимо до екрану графіка
-      currentRegionName = regionName;
-      document.getElementById('selection-screen').style.display = 'none';
-      document.getElementById('schedule-screen').style.display = 'block';
-      loadSchedule(0);
+      try {
+        // Спочатку зберігаємо в таблицю
+        await fetch(`${WEB_APP_URL}?action=saveSelection&chatId=${userId}&url=${encodeURIComponent(queueUrl)}&name=${encodeURIComponent(queueName)}&region=${encodeURIComponent(regionName)}`);
+        
+        // Відправляємо дані назад в бот
+        tg.sendData(JSON.stringify({
+          action: "saveQueue",
+          queue: queueName,
+          url: queueUrl,
+          region: regionName
+        }));
+        
+        // Переходимо до екрану графіка
+        currentRegionName = regionName;
+        document.getElementById('selection-screen').style.display = 'none';
+        document.getElementById('schedule-screen').style.display = 'block';
+        loadSchedule(0);
+      } catch (e) {
+        alert("Помилка збереження");
+        btn.disabled = false;
+        btn.innerText = "Зберегти вибір";
+      }
     }
 
     function showSelection() {
