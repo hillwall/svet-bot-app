@@ -162,9 +162,57 @@
       position: relative;
     }
 
-    .off-full { background-color: var(--color-dark) !important; color: var(--color-light) !important; border: none; }
-    .off-left { background: linear-gradient(90deg, var(--color-dark) 50%, var(--white) 50%) !important; }
-    .off-right { background: linear-gradient(90deg, var(--white) 50%, var(--color-dark) 50%) !important; }
+    .off-full { 
+      background-color: var(--color-dark) !important; 
+      color: var(--color-light) !important; 
+      border: none; 
+    }
+    
+    .off-left { 
+      background: linear-gradient(90deg, var(--color-dark) 50%, var(--white) 50%) !important;
+      color: transparent !important;
+    }
+    
+    .off-left::before {
+      content: attr(data-time);
+      position: absolute;
+      left: 0;
+      width: 50%;
+      color: var(--color-light);
+      text-align: center;
+    }
+    
+    .off-left::after {
+      content: attr(data-time);
+      position: absolute;
+      right: 0;
+      width: 50%;
+      color: var(--color-dark);
+      text-align: center;
+    }
+    
+    .off-right { 
+      background: linear-gradient(90deg, var(--white) 50%, var(--color-dark) 50%) !important;
+      color: transparent !important;
+    }
+    
+    .off-right::before {
+      content: attr(data-time);
+      position: absolute;
+      left: 0;
+      width: 50%;
+      color: var(--color-dark);
+      text-align: center;
+    }
+    
+    .off-right::after {
+      content: attr(data-time);
+      position: absolute;
+      right: 0;
+      width: 50%;
+      color: var(--color-light);
+      text-align: center;
+    }
     
     .current { outline: 3px solid var(--accent); z-index: 10; }
 
@@ -429,24 +477,28 @@
 
       for (let h = 0; h < 24; h++) {
         const cell = document.createElement('div');
+        const timeStr = `${h.toString().padStart(2, '0')}-${(h+1).toString().padStart(2, '0')}`;
         const firstHalfOff = isTimeOff(h, 15, data.slots);
         const secondHalfOff = isTimeOff(h, 45, data.slots);
 
+        cell.setAttribute('data-time', timeStr);
+
         if (firstHalfOff && secondHalfOff) {
           cell.className = 'hour off-full';
+          cell.innerHTML = timeStr;
         } else if (firstHalfOff) {
           cell.className = 'hour off-left';
         } else if (secondHalfOff) {
           cell.className = 'hour off-right';
         } else {
           cell.className = 'hour';
+          cell.innerHTML = timeStr;
         }
 
         if (h === nowH && !data.isTomorrow) {
           cell.classList.add('current');
         }
         
-        cell.innerHTML = `${h.toString().padStart(2, '0')}-${(h+1).toString().padStart(2, '0')}`;
         gridEl.appendChild(cell);
       }
     }
