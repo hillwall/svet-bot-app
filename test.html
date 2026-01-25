@@ -61,13 +61,18 @@
             background: transparent; border: 1px solid var(--tg-theme-hint-color, #777); color: var(--tg-theme-hint-color, #ccc);
             margin-top: 25px; font-size: 0.9em;
         }
-        /* ВАЖЛИВО: Приховування екранів */
         .screen-section { display: none; } 
         .visible { display: block; }
         
         #loading-screen { text-align: center; padding-top: 50px; }
         .spinner { font-size: 2em; animation: spin 1s infinite linear; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Центрування тексту в селекті */
+        .form-select {
+            text-align: center;
+            text-align-last: center; /* Для Chrome/Safari */
+        }
     </style>
 </head>
 <body>
@@ -120,7 +125,7 @@
         </ul>
 
         <div id="grid-container" class="slot-grid">
-            <div class="col-span-4 text-center py-5">⌛</div>
+            <div class="col-span-4 text-center py-5">⌛ Завантаження...</div>
         </div>
 
         <button class="btn-tg btn-outline" onclick="toggleEdit()">⚙️ Змінити чергу</button>
@@ -129,7 +134,7 @@
 
 <script>
     // --- CONFIG ---
-    // ЗАМІНИ НА СВІЙ АКТУАЛЬНИЙ URL WebApp
+    // ЗАМІНИ НА АКТУАЛЬНИЙ URL WebApp
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec'; 
     
     let tg = window.Telegram.WebApp;
@@ -142,8 +147,6 @@
 
     window.onload = async function() {
         try {
-            // Паралельне завантаження: Юзер + Список регіонів
-            // Це пришвидшує роботу
             const [userResp, treeResp] = await Promise.all([
                 fetch(`${GAS_API_URL}?action=getUser&userId=${currentUserId}`),
                 fetch(`${GAS_API_URL}?action=getTree`)
@@ -152,19 +155,16 @@
             userSettings = await userResp.json();
             regionsData = await treeResp.json();
             
-            // Наповнюємо селект (навіть якщо не покажемо його відразу)
             populateRegions();
 
             document.getElementById('loading-screen').style.display = 'none';
 
             if (userSettings.found) {
-                // Юзер є -> Відразу графік
                 document.getElementById('display-queue-name').innerText = userSettings.queueName;
                 document.getElementById('display-region-name').innerText = userSettings.regionName;
                 showScheduleView();
                 switchDay(0);
             } else {
-                // Юзера немає -> Налаштування
                 showSetupView();
             }
         } catch (e) {
@@ -327,7 +327,7 @@
     function showSetupView() {
         document.getElementById('setup-screen').classList.add('visible');
         document.getElementById('schedule-screen').classList.remove('visible');
-        document.getElementById('cancel-setup-btn').style.display = 'none'; // Не можна скасувати, якщо це перший вхід
+        document.getElementById('cancel-setup-btn').style.display = 'none'; 
     }
 
     function showScheduleView() {
@@ -338,7 +338,7 @@
     function toggleEdit() {
         document.getElementById('schedule-screen').classList.remove('visible');
         document.getElementById('setup-screen').classList.add('visible');
-        document.getElementById('cancel-setup-btn').style.display = 'block'; // Можна скасувати
+        document.getElementById('cancel-setup-btn').style.display = 'block'; 
     }
 
     function pad(n) { return n < 10 ? '0'+n : n; }
