@@ -229,6 +229,9 @@
 
     window.onload = async function() {
         try {
+            // Log user ID to see if it's undefined
+            console.log("Current User ID:", currentUserId);
+            
             const [userResp, treeResp] = await Promise.all([
                 fetch(`${GAS_API_URL}?action=getUser&userId=${currentUserId}&t=${Date.now()}`),
                 fetch(`${GAS_API_URL}?action=getTree&t=${Date.now()}`)
@@ -290,10 +293,17 @@
         const rName = rSelect.options[rSelect.selectedIndex].text;
         const qName = qSelect.options[qSelect.selectedIndex].text;
         const qUrl = qSelect.value;
+        
+        if (!currentUserId || currentUserId === 'undefined') {
+            tg.showAlert("Помилка: не вдалося отримати ID користувача.");
+            return;
+        }
 
         tg.MainButton.showProgress();
-        // ПРАВКА: Прибрано параметр regionUrl, оскільки його немає в Code.gs
+        
+        // ПРАВКА: Прибрано regionUrl. Додано явне перетворення userId на String
         await fetch(`${GAS_API_URL}?action=saveUser&userId=${currentUserId}&regionName=${encodeURIComponent(rName)}&queueName=${encodeURIComponent(qName)}&queueUrl=${encodeURIComponent(qUrl)}&t=${Date.now()}`);
+        
         tg.MainButton.hideProgress();
 
         userSettings = { found: true, regionName: rName, queueName: qName, queueUrl: qUrl };
