@@ -38,15 +38,15 @@
             border: none;
         }
         
-        /* КОЛІР 1: Світло ВІДСУТНЄ (🌚) -> Темно-синій фон, жовтий текст */
+        /* 🌚 Світло ВІДСУТНЄ */
         .status-card.off-mode {
             background-color: #00193a !important; 
             color: #e6e6a1 !important;
         }
         
-        /* КОЛІР 2: Світло Є (🌝) -> Жовтий фон, Темно-синій текст */
+        /* 🌝 Світло Є */
         .status-card.on-mode {
-            background-color: #e6e5a2 !important; /* Трохи світліший #e6e6a1 */
+            background-color: #e6e5a2 !important;
             color: #00193a !important;
         }
 
@@ -292,6 +292,7 @@
         const qUrl = qSelect.value;
 
         tg.MainButton.showProgress();
+        // ПРАВКА: Прибрано параметр regionUrl, оскільки його немає в Code.gs
         await fetch(`${GAS_API_URL}?action=saveUser&userId=${currentUserId}&regionName=${encodeURIComponent(rName)}&queueName=${encodeURIComponent(qName)}&queueUrl=${encodeURIComponent(qUrl)}&t=${Date.now()}`);
         tg.MainButton.hideProgress();
 
@@ -399,14 +400,12 @@
         }
 
         banner.className = 'status-card';
-        // Видаляємо старі класи станів
         banner.classList.remove('off-mode', 'on-mode');
 
         let statusText = isLight ? "Зараз світло Є (по графіку)" : "Зараз світло ВІДСУТНЄ";
         let emoji = isLight ? "🌝" : "🌚";
         let timeLeftHtml = "", nextEventHtml = "";
 
-        // Додаємо клас для кольору
         if (isLight) {
             banner.classList.add('on-mode');
         } else {
