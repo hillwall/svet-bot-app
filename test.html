@@ -30,16 +30,26 @@
         .queue-title { font-weight: bold; font-size: 1.1em; }
         .date-display { color: var(--tg-theme-hint-color, #aaaaaa); font-size: 0.9em; }
 
-        /* --- COLORS & BANNER --- */
+        /* --- STATUS BANNER COLORS --- */
         .status-card {
-            background-color: #e6e5a2; 
-            color: #00193a;            
             border-radius: 12px; padding: 15px;
             text-align: center; margin-bottom: 15px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             border: none;
         }
         
+        /* КОЛІР 1: Світло ВІДСУТНЄ (🌚) -> Темно-синій фон, жовтий текст */
+        .status-card.off-mode {
+            background-color: #00193a !important; 
+            color: #e6e6a1 !important;
+        }
+        
+        /* КОЛІР 2: Світло Є (🌝) -> Жовтий фон, Темно-синій текст */
+        .status-card.on-mode {
+            background-color: #e6e5a2 !important; /* Трохи світліший #e6e6a1 */
+            color: #00193a !important;
+        }
+
         .status-emoji { font-size: 1.5em; display: block; margin-bottom: 5px; }
         .status-timer { font-size: 1.2em; font-weight: bold; margin: 5px 0; }
         .status-next { font-size: 0.9em; opacity: 0.9; }
@@ -219,7 +229,6 @@
 
     window.onload = async function() {
         try {
-            // Використовуємо cache busting
             const [userResp, treeResp] = await Promise.all([
                 fetch(`${GAS_API_URL}?action=getUser&userId=${currentUserId}&t=${Date.now()}`),
                 fetch(`${GAS_API_URL}?action=getTree&t=${Date.now()}`)
@@ -296,7 +305,6 @@
 
     let activeDayOffset = 0;
 
-    // ПРАВКА: Функція для отримання правильної дати YYYY-MM-DD в локальному часі
     function getLocalDateString(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -316,7 +324,6 @@
         const date = new Date();
         date.setDate(date.getDate() + dayOffset);
         
-        // ВИКОРИСТОВУЄМО ЛОКАЛЬНИЙ ЧАС, А НЕ UTC
         const dateStrApi = getLocalDateString(date);
         
         const dDisplay = pad(date.getDate()) + '.' + pad(date.getMonth()+1) + '.' + date.getFullYear();
@@ -391,11 +398,20 @@
             if (currentSchedule[i] !== currentStatusVal) { changeIndex = i; break; }
         }
 
-        banner.className = 'status-card'; 
+        banner.className = 'status-card';
+        // Видаляємо старі класи станів
+        banner.classList.remove('off-mode', 'on-mode');
 
         let statusText = isLight ? "Зараз світло Є (по графіку)" : "Зараз світло ВІДСУТНЄ";
         let emoji = isLight ? "🌝" : "🌚";
         let timeLeftHtml = "", nextEventHtml = "";
+
+        // Додаємо клас для кольору
+        if (isLight) {
+            banner.classList.add('on-mode');
+        } else {
+            banner.classList.add('off-mode');
+        }
 
         if (changeIndex !== -1) {
             const targetDate = new Date();
