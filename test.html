@@ -16,24 +16,15 @@
         }
         .container { max-width: 400px; }
         
-        /* HEADER */
         .header-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
         }
         .queue-title { font-weight: bold; font-size: 1.1em; }
         .date-display { color: var(--tg-theme-hint-color, #aaaaaa); font-size: 0.9em; }
 
-        /* STATUS BANNER */
         .status-card {
-            background-color: #2c2c2c;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            margin-bottom: 15px;
-            border: 1px solid #444;
+            background-color: #2c2c2c; border-radius: 12px; padding: 15px;
+            text-align: center; margin-bottom: 15px; border: 1px solid #444;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
         .status-card.on { background: linear-gradient(135deg, #2e4a2e 0%, #1e331e 100%); border-color: #4caf50; }
@@ -42,77 +33,58 @@
         .status-timer { font-size: 1.2em; font-weight: bold; margin: 5px 0; }
         .status-next { font-size: 0.9em; opacity: 0.9; }
 
-        /* TABS */
         .nav-pills .nav-link {
-            color: var(--tg-theme-text-color, #fff);
-            background-color: #2c2c2c;
-            margin: 0 5px;
-            border-radius: 8px;
-            padding: 8px 0;
+            color: var(--tg-theme-text-color, #fff); background-color: #2c2c2c;
+            margin: 0 5px; border-radius: 8px; padding: 8px 0;
         }
         .nav-pills .nav-link.active {
-            background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #fff);
+            background-color: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #fff);
         }
 
-        /* GRID */
-        .slot-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-top: 15px;
-        }
+        .slot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
         .slot {
-            border-radius: 8px;
-            padding: 12px 2px;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 600;
-            background-color: #2c2c2c;
-            border: 1px solid #444;
-            color: #ccc;
+            border-radius: 8px; padding: 12px 2px; text-align: center; font-size: 13px; font-weight: 600;
+            background-color: #2c2c2c; border: 1px solid #444; color: #ccc;
         }
         .slot.on { background-color: #ffffff; color: #000; border-color: #fff; }
         .slot.off { background-color: #1a1a1a; color: #555; border-color: #333; }
         .slot.maybe { background-color: #6c757d; color: #fff; }
         .slot.current { 
-            border: 2px solid var(--tg-theme-button-color, #3390ec); 
-            transform: scale(1.05);
-            box-shadow: 0 0 10px rgba(51, 144, 236, 0.4);
-            z-index: 2;
+            border: 2px solid var(--tg-theme-button-color, #3390ec); transform: scale(1.05); box-shadow: 0 0 10px rgba(51, 144, 236, 0.4); z-index: 2;
         }
 
-        /* CONTROLS */
         .btn-tg {
-            background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-weight: bold;
+            background-color: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff);
+            width: 100%; padding: 12px; border: none; border-radius: 8px; margin-top: 15px; font-weight: bold;
         }
         .btn-outline {
-            background: transparent;
-            border: 1px solid var(--tg-theme-hint-color, #777);
-            color: var(--tg-theme-hint-color, #ccc);
-            margin-top: 25px;
-            font-size: 0.9em;
+            background: transparent; border: 1px solid var(--tg-theme-hint-color, #777); color: var(--tg-theme-hint-color, #ccc);
+            margin-top: 25px; font-size: 0.9em;
         }
-        .hidden { display: none !important; }
-        .empty-msg { text-align: center; padding: 30px; color: #888; }
+        /* ВАЖЛИВО: Приховування екранів */
+        .screen-section { display: none; } 
+        .visible { display: block; }
+        
+        #loading-screen { text-align: center; padding-top: 50px; }
+        .spinner { font-size: 2em; animation: spin 1s infinite linear; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <div class="container py-3">
-    <div id="setup-screen" class="hidden">
+    
+    <div id="loading-screen">
+        <div class="spinner">⏳</div>
+        <div class="mt-2 text-muted">Завантаження...</div>
+    </div>
+
+    <div id="setup-screen" class="screen-section">
         <h4 class="mb-4 text-center">Налаштування</h4>
         <div class="mb-3">
             <label class="form-label text-muted small">Область</label>
             <select id="region-select" class="form-select bg-dark text-white border-secondary">
-                <option value="">Завантаження...</option>
+                <option value="">Завантаження списку...</option>
             </select>
         </div>
         <div class="mb-3">
@@ -122,22 +94,21 @@
             </select>
         </div>
         <button id="save-btn" class="btn-tg" onclick="saveSettings()">Зберегти</button>
-        <div class="text-center mt-3">
+        <div class="text-center mt-3" id="cancel-setup-btn" style="display:none;">
             <button class="btn btn-link text-muted" onclick="showScheduleView()" style="text-decoration: none;">Скасувати</button>
         </div>
     </div>
 
-    <div id="schedule-screen">
+    <div id="schedule-screen" class="screen-section">
         <div class="header-info">
             <div>
-                <div class="queue-title" id="display-queue-name">Завантаження...</div>
-                <div class="date-display" id="display-region-name"></div>
+                <div class="queue-title" id="display-queue-name">...</div>
+                <div class="date-display" id="display-region-name">...</div>
             </div>
             <button class="btn btn-sm btn-dark border-0" onclick="tg.close()">✖</button>
         </div>
 
-        <div id="status-banner" class="status-card hidden">
-            </div>
+        <div id="status-banner" class="status-card d-none"></div>
 
         <ul class="nav nav-pills nav-fill mt-3">
             <li class="nav-item">
@@ -149,7 +120,7 @@
         </ul>
 
         <div id="grid-container" class="slot-grid">
-            <div class="col-span-4 text-center py-5">⌛ Отримання даних...</div>
+            <div class="col-span-4 text-center py-5">⌛</div>
         </div>
 
         <button class="btn-tg btn-outline" onclick="toggleEdit()">⚙️ Змінити чергу</button>
@@ -158,7 +129,7 @@
 
 <script>
     // --- CONFIG ---
-    // ЗАМІНИ НА АКТУАЛЬНИЙ URL ПІСЛЯ Deploy -> New Version
+    // ЗАМІНИ НА СВІЙ АКТУАЛЬНИЙ URL WebApp
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec'; 
     
     let tg = window.Telegram.WebApp;
@@ -167,56 +138,58 @@
     let regionsData = [];
     let currentUserId = tg.initDataUnsafe?.user?.id || 'TEST_USER_BROWSER';
     let userSettings = null;
-    let currentSchedule = []; // Для розрахунків банера
+    let currentSchedule = [];
 
     window.onload = async function() {
-        // 1. Get User Profile
         try {
-            const resp = await fetch(`${GAS_API_URL}?action=getUser&userId=${currentUserId}`);
-            userSettings = await resp.json();
+            // Паралельне завантаження: Юзер + Список регіонів
+            // Це пришвидшує роботу
+            const [userResp, treeResp] = await Promise.all([
+                fetch(`${GAS_API_URL}?action=getUser&userId=${currentUserId}`),
+                fetch(`${GAS_API_URL}?action=getTree`)
+            ]);
+
+            userSettings = await userResp.json();
+            regionsData = await treeResp.json();
             
-            loadRegions(); // Start loading list in background
+            // Наповнюємо селект (навіть якщо не покажемо його відразу)
+            populateRegions();
+
+            document.getElementById('loading-screen').style.display = 'none';
 
             if (userSettings.found) {
+                // Юзер є -> Відразу графік
                 document.getElementById('display-queue-name').innerText = userSettings.queueName;
                 document.getElementById('display-region-name').innerText = userSettings.regionName;
                 showScheduleView();
-                switchDay(0); // Load Today
+                switchDay(0);
             } else {
-                toggleEdit(); // Show setup
+                // Юзера немає -> Налаштування
+                showSetupView();
             }
         } catch (e) {
-            document.getElementById('grid-container').innerHTML = `<div class="empty-msg">Помилка з'єднання: ${e}</div>`;
+            document.getElementById('loading-screen').innerHTML = `<div class="text-danger">Помилка: ${e}</div>`;
         }
     };
 
-    // --- LOGIC ---
-
-    async function loadRegions() {
-        const resp = await fetch(`${GAS_API_URL}?action=getTree`);
-        regionsData = await resp.json();
-        
+    function populateRegions() {
         const rSelect = document.getElementById('region-select');
         rSelect.innerHTML = '<option value="">Оберіть область...</option>';
-        
         Object.keys(regionsData).forEach(rName => {
             const opt = document.createElement('option');
-            opt.value = rName;
-            opt.innerText = rName;
+            opt.value = rName; opt.innerText = rName;
             rSelect.appendChild(opt);
         });
-
+        
         rSelect.addEventListener('change', () => {
             const qSelect = document.getElementById('queue-select');
             qSelect.innerHTML = '<option value="">Оберіть чергу...</option>';
             qSelect.disabled = false;
-            
             const queues = regionsData[rSelect.value];
             if(queues) {
                 queues.forEach(q => {
                     const opt = document.createElement('option');
-                    opt.value = q.url;
-                    opt.innerText = q.name;
+                    opt.value = q.url; opt.innerText = q.name;
                     qSelect.appendChild(opt);
                 });
             }
@@ -240,7 +213,6 @@
         await fetch(`${GAS_API_URL}?action=saveUser&userId=${currentUserId}&regionName=${encodeURIComponent(rName)}&queueName=${encodeURIComponent(qName)}&queueUrl=${encodeURIComponent(qUrl)}`);
         tg.MainButton.hideProgress();
 
-        // Update local context
         userSettings = { found: true, regionName: rName, queueName: qName, queueUrl: qUrl };
         document.getElementById('display-queue-name').innerText = qName;
         document.getElementById('display-region-name').innerText = rName;
@@ -257,8 +229,8 @@
         document.getElementById('tab-tomorrow').classList.toggle('active', dayOffset === 1);
         
         const container = document.getElementById('grid-container');
-        container.innerHTML = '<div class="col-span-4 text-center py-5">⌛</div>';
-        document.getElementById('status-banner').classList.add('hidden');
+        container.innerHTML = '<div class="col-span-4 text-center py-5">⌛ Завантаження...</div>';
+        document.getElementById('status-banner').classList.add('d-none');
 
         const date = new Date();
         date.setDate(date.getDate() + dayOffset);
@@ -273,7 +245,6 @@
         renderGrid(data.schedule);
         
         if (dayOffset === 0) updateStatusBanner();
-        else document.getElementById('status-banner').classList.add('hidden');
     }
 
     function renderGrid(scheduleArray) {
@@ -281,8 +252,8 @@
         container.innerHTML = '';
 
         if (!scheduleArray || scheduleArray.length === 0) {
-            container.innerHTML = `<div class="empty-msg" style="grid-column: span 4;">
-                🤷‍♂️ Графік на цей день ще не опубліковано.
+            container.innerHTML = `<div class="empty-msg" style="grid-column: span 4; text-align:center; color:#888; padding:20px;">
+                🤷‍♂️ Графік ще не опубліковано.
             </div>`;
             return;
         }
@@ -290,107 +261,84 @@
         const now = new Date();
         const currentH = now.getHours();
 
-        // Convert 48 slots to 24 visual blocks
         for (let h = 0; h < 24; h++) {
-            const val1 = scheduleArray[h*2];     // 00:00-00:30
-            const val2 = scheduleArray[h*2+1];   // 00:30-01:00
+            const val1 = scheduleArray[h*2];     
+            const val2 = scheduleArray[h*2+1];   
             
             const div = document.createElement('div');
             div.className = 'slot';
-            div.innerText = `${h.toString().padStart(2,'0')}-${(h+1).toString().padStart(2,'0')}`;
+            div.innerText = `${pad(h)}-${pad(h+1)}`;
             
-            // Logic: If ANY part is OFF -> OFF. Else ON.
             let displayClass = 'on';
             if (val1 === 0 || val2 === 0) displayClass = 'off';
             else if (val1 === 2 || val2 === 2) displayClass = 'maybe';
             
             div.classList.add(displayClass);
             
-            // Highlight current hour ONLY if Today
             if (activeDayOffset === 0 && h === currentH) {
                 div.classList.add('current');
             }
-            
             container.appendChild(div);
         }
     }
 
     function updateStatusBanner() {
         const banner = document.getElementById('status-banner');
-        
-        if (!currentSchedule || currentSchedule.length === 0) {
-            banner.classList.add('hidden');
-            return;
-        }
+        if (!currentSchedule || currentSchedule.length === 0) return;
 
         const now = new Date();
-        // Index 0..47
         const nowIndex = now.getHours() * 2 + (now.getMinutes() >= 30 ? 1 : 0);
-        
-        // Safety check if day just rolled over but page loaded
         if (nowIndex >= 48) return; 
 
         const isLight = currentSchedule[nowIndex] === 1;
         const currentStatusVal = currentSchedule[nowIndex];
-
-        // Find next change
         let changeIndex = -1;
         for (let i = nowIndex + 1; i < 48; i++) {
-            if (currentSchedule[i] !== currentStatusVal) {
-                changeIndex = i;
-                break;
-            }
+            if (currentSchedule[i] !== currentStatusVal) { changeIndex = i; break; }
         }
 
-        banner.classList.remove('hidden', 'on', 'off');
+        banner.className = 'status-card'; // reset
         banner.classList.add(isLight ? 'on' : 'off');
 
         let statusText = isLight ? "Зараз світло Є (по графіку)" : "Зараз світло ВІДСУТНЄ";
         let emoji = isLight ? "🌝" : "🌚";
-        
-        // Time diff
-        let timeLeftHtml = "";
-        let nextEventHtml = "";
+        let timeLeftHtml = "", nextEventHtml = "";
 
         if (changeIndex !== -1) {
-            // Minutes until change
-            // changeIndex starts at e.g. 32 (16:00). Current is 14:45.
             const targetDate = new Date();
             targetDate.setHours(Math.floor(changeIndex / 2));
             targetDate.setMinutes((changeIndex % 2) * 30);
             targetDate.setSeconds(0);
-            
-            // If change is tomorrow (not handled by this simple logic for single array), handle simple case
             const diffMs = targetDate - now;
             if (diffMs > 0) {
                 const diffHrs = Math.floor(diffMs / 3600000);
                 const diffMins = Math.floor((diffMs % 3600000) / 60000);
-                
                 timeLeftHtml = `<div>Залишилося: ${diffHrs} год ${diffMins} хв.</div>`;
-                
                 const nextAction = isLight ? "Вимкнення" : "Увімкнення";
-                const nextTimeStr = `${pad(targetDate.getHours())}:${pad(targetDate.getMinutes())}`;
-                nextEventHtml = `<div>${isLight ? '🌚' : '🌝'} ${nextAction} о ${nextTimeStr}</div>`;
+                nextEventHtml = `<div>${isLight ? '🌚' : '🌝'} ${nextAction} о ${pad(targetDate.getHours())}:${pad(targetDate.getMinutes())}</div>`;
             }
         } else {
             timeLeftHtml = "<div>Без змін до кінця доби</div>";
         }
 
-        banner.innerHTML = `
-            <div class="status-emoji">${emoji} ${statusText}</div>
-            <div class="status-timer">${timeLeftHtml}</div>
-            <div class="status-next">${nextEventHtml}</div>
-        `;
+        banner.innerHTML = `<div class="status-emoji">${emoji} ${statusText}</div><div class="status-timer">${timeLeftHtml}</div><div class="status-next">${nextEventHtml}</div>`;
+    }
+
+    function showSetupView() {
+        document.getElementById('setup-screen').classList.add('visible');
+        document.getElementById('schedule-screen').classList.remove('visible');
+        document.getElementById('cancel-setup-btn').style.display = 'none'; // Не можна скасувати, якщо це перший вхід
+    }
+
+    function showScheduleView() {
+        document.getElementById('setup-screen').classList.remove('visible');
+        document.getElementById('schedule-screen').classList.add('visible');
     }
 
     function toggleEdit() {
-        document.getElementById('schedule-screen').classList.add('hidden');
-        document.getElementById('setup-screen').classList.remove('hidden');
-    }
-    
-    function showScheduleView() {
-        document.getElementById('setup-screen').classList.add('hidden');
-        document.getElementById('schedule-screen').classList.remove('hidden');
+        document.getElementById('schedule-screen').classList.remove('visible');
+        document.getElementById('setup-screen').classList.add('visible');
+        document.getElementById('cancel-setup-btn').style.display = 'block'; // Можна скасувати
     }
 
     function pad(n) { return n < 10 ? '0'+n : n; }
