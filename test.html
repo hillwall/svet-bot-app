@@ -53,8 +53,6 @@
 
         .form-select { background-position: right 0.75rem center; }
         .disclaimer { font-size: 0.9em; color: #888; text-align: center; margin-top: 25px; font-style: italic; padding: 0 10px; }
-        
-        .debug-id { font-size: 10px; color: #555; text-align: center; margin-top: 50px; user-select: text; }
     </style>
 </head>
 <body>
@@ -80,8 +78,6 @@
         <div class="text-center mt-3" id="cancel-setup-btn" style="display:none;">
             <button class="btn btn-link text-muted" onclick="showScheduleView()" style="text-decoration: none;">Скасувати</button>
         </div>
-        
-        <div class="debug-id">ID: <span id="debug-user-id">...</span></div>
     </div>
 
     <div id="schedule-screen" class="screen-section">
@@ -106,9 +102,6 @@
     let tg = window.Telegram.WebApp;
     tg.expand();
 
-    // ----------------------------------------------------
-    // БРОНЕБІЙНЕ ОТРИМАННЯ ID
-    // ----------------------------------------------------
     function resolveUserId() {
         let id = tg.initDataUnsafe?.user?.id;
         if (id) return String(id);
@@ -120,8 +113,7 @@
     }
 
     let currentUserId = resolveUserId();
-    document.getElementById('debug-user-id').innerText = currentUserId;
-
+    
     let regionsData = [];
     let userSettings = null;
     let currentSchedule = [];
@@ -138,8 +130,6 @@
             populateRegions();
             document.getElementById('loading-screen').style.display = 'none';
 
-            // ПОКРАЩЕНА ПЕРЕВІРКА: 
-            // Якщо є прапорець found АБО якщо є записана назва області - показуємо графік
             if (userSettings.found || (userSettings.regionName && userSettings.regionName !== "")) {
                 document.getElementById('display-queue-name').innerText = userSettings.queueName;
                 document.getElementById('display-region-name').innerText = userSettings.regionName;
@@ -190,7 +180,6 @@
         await fetch(`${GAS_API_URL}?action=saveUser&userId=${currentUserId}&regionName=${encodeURIComponent(rName)}&queueName=${encodeURIComponent(qName)}&queueUrl=${encodeURIComponent(qUrl)}&t=${Date.now()}`);
         tg.MainButton.hideProgress();
 
-        // Оновлюємо локальний об'єкт з found: true, щоб не перевантажувати сторінку
         userSettings = { found: true, regionName: rName, queueName: qName, queueUrl: qUrl };
         document.getElementById('display-queue-name').innerText = qName;
         document.getElementById('display-region-name').innerText = rName;
