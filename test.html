@@ -13,7 +13,6 @@
             font-family: sans-serif;
             padding-bottom: 20px;
             font-size: 14px;
-            /* Центрування для спінера на весь екран */
             min-height: 100vh;
             display: flex; 
             flex-direction: column;
@@ -31,10 +30,10 @@
         .queue-title { font-weight: bold; font-size: 1.1em; }
         .date-display { color: var(--tg-theme-hint-color, #aaaaaa); font-size: 0.9em; }
 
-        /* --- COLORS --- */
+        /* --- COLORS & BANNER --- */
         .status-card {
-            background-color: #e6e5a2; /* ПРАВКА */
-            color: #00193a;            /* Контрастний текст */
+            background-color: #e6e5a2; 
+            color: #00193a;            
             border-radius: 12px; padding: 15px;
             text-align: center; margin-bottom: 15px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
@@ -58,9 +57,12 @@
         .slot {
             border-radius: 8px; padding: 12px 2px; text-align: center; font-size: 13px; font-weight: 600;
             border: 1px solid transparent;
+            position: relative; /* Для правильного відображення */
         }
 
-        /* ПРАВКА: Кольори блоків */
+        /* --- LOGIC FOR SLOT COLORS --- */
+        
+        /* Суцільні блоки */
         .slot.off { 
             background-color: #00193a; 
             color: #e6e6a1; 
@@ -75,10 +77,30 @@
             background-color: #a1a1a1; 
             color: #ffffff; 
         }
-        
-        /* Додатковий клас для обводки, якщо потрібно */
+
+        /* Розділені блоки (Градієнти) */
+        /* Ліво: Темно, Право: Світло */
+        .slot.split-off-on {
+            background: linear-gradient(90deg, #00193a 50%, #e6e6a1 50%);
+            color: #00193a; /* Текст синій */
+            border-color: #00193a; 
+        }
+
+        /* Ліво: Світло, Право: Темно */
+        .slot.split-on-off {
+            background: linear-gradient(90deg, #e6e6a1 50%, #00193a 50%);
+            color: #00193a; /* Текст синій */
+            border-color: #00193a;
+        }
+
+        /* Обводка тексту для читабельності на розділених блоках */
         .text-stroke {
-            -webkit-text-stroke: 1px white;
+            text-shadow: 
+               -1px -1px 0 #fff,  
+                1px -1px 0 #fff,
+               -1px  1px 0 #fff,
+                1px  1px 0 #fff;
+            font-weight: 800;
         }
 
         .slot.current { 
@@ -94,13 +116,12 @@
         }
         .btn-outline {
             background: transparent; border: 1px solid var(--tg-theme-hint-color, #777); color: var(--tg-theme-hint-color, #ccc);
-            margin-top: 25px; font-size: 0.9em;
+            margin-top: 15px; font-size: 0.9em;
         }
         
         .screen-section { display: none; } 
         .visible { display: block; }
         
-        /* ПРАВКА: Центрування завантаження */
         #loading-screen { 
             display: flex;
             flex-direction: column;
@@ -119,10 +140,13 @@
         
         .disclaimer {
             font-size: 0.75em;
-            color: #666;
+            color: #888;
             text-align: center;
-            margin-top: 30px;
-            line-height: 1.4;
+            margin-top: 25px;
+            margin-bottom: 5px;
+            line-height: 1.3;
+            font-style: italic;
+            padding: 0 10px;
         }
     </style>
 </head>
@@ -190,7 +214,6 @@
 </div>
 
 <script>
-    // --- CONFIG ---
     // ЗАМІНИ НА АКТУАЛЬНИЙ URL WebApp
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec'; 
     
@@ -216,11 +239,10 @@
 
             document.getElementById('loading-screen').style.display = 'none';
 
-            // ПРАВКА 4: Якщо користувач знайдений - відразу графік
             if (userSettings.found) {
                 document.getElementById('display-queue-name').innerText = userSettings.queueName;
                 document.getElementById('display-region-name').innerText = userSettings.regionName;
-                showScheduleView(); // Ця функція приховає Setup і покаже Schedule
+                showScheduleView();
                 switchDay(0);
             } else {
                 showSetupView();
@@ -271,16 +293,12 @@
         await fetch(`${GAS_API_URL}?action=saveUser&userId=${currentUserId}&regionName=${encodeURIComponent(rName)}&queueName=${encodeURIComponent(qName)}&queueUrl=${encodeURIComponent(qUrl)}`);
         tg.MainButton.hideProgress();
 
-        // Оновлюємо локальний контекст
         userSettings = { found: true, regionName: rName, queueName: qName, queueUrl: qUrl };
         document.getElementById('display-queue-name').innerText = qName;
         document.getElementById('display-region-name').innerText = rName;
         
         showScheduleView();
         switchDay(0);
-        
-        // Можна закрити вікно, щоб юзер побачив меню в боті, або лишити відкритим
-        // tg.close(); 
     }
 
     let activeDayOffset = 0;
@@ -297,10 +315,7 @@
         const date = new Date();
         date.setDate(date.getDate() + dayOffset);
         
-        // Формат для API: YYYY-MM-DD
         const dateStrApi = date.toISOString().split('T')[0];
-        
-        // ПРАВКА 5: Формат для відображення: DD.MM.YYYY
         const dDisplay = pad(date.getDate()) + '.' + pad(date.getMonth()+1) + '.' + date.getFullYear();
         document.getElementById('current-date-text').innerText = dDisplay;
 
@@ -330,24 +345,31 @@
         const currentH = now.getHours();
 
         for (let h = 0; h < 24; h++) {
-            const val1 = scheduleArray[h*2];     
-            const val2 = scheduleArray[h*2+1];   
+            const val1 = scheduleArray[h*2];     // 00-30
+            const val2 = scheduleArray[h*2+1];   // 30-60
             
             const div = document.createElement('div');
             div.className = 'slot';
             div.innerText = `${pad(h)}-${pad(h+1)}`;
             
-            let displayClass = 'on';
-            if (val1 === 0 || val2 === 0) displayClass = 'off';
-            else if (val1 === 2 || val2 === 2) displayClass = 'maybe';
-            
-            div.classList.add(displayClass);
-            
-            // ПРАВКА: Якщо одна половина ON, а інша OFF - це змішаний тип. 
-            // Якщо потрібна обводка тексту:
-            if ((val1 === 1 && val2 !== 1) || (val1 !== 1 && val2 === 1)) {
-                 // Тут можна додати клас .text-stroke, але на темному фоні .off це буде виглядати специфічно.
-                 // Оскільки ми вже вирішили, що "off" перемагає, блок буде темним.
+            // ЛОГІКА КОЛЬОРІВ ТА ГРАДІЄНТІВ
+            if (val1 === val2) {
+                // Суцільний блок
+                if (val1 === 0) div.classList.add('off');       // Темний (0)
+                else if (val1 === 2) div.classList.add('maybe'); // Сірий (2)
+                else div.classList.add('on');                   // Світлий (1)
+            } else {
+                // Розділений блок
+                if (val1 === 0 && val2 === 1) {
+                    // Ліво Темне, Право Світле
+                    div.classList.add('split-off-on', 'text-stroke');
+                } else if (val1 === 1 && val2 === 0) {
+                    // Ліво Світле, Право Темне
+                    div.classList.add('split-on-off', 'text-stroke');
+                } else {
+                    // Інші варіанти (наприклад, з Maybe), поки ставимо дефолт off, щоб не зламалось
+                    div.classList.add('off');
+                }
             }
 
             if (activeDayOffset === 0 && h === currentH) {
@@ -372,9 +394,7 @@
             if (currentSchedule[i] !== currentStatusVal) { changeIndex = i; break; }
         }
 
-        // Клас банера залишаємо дефолтним (жовтим), але змінюємо текст всередині, якщо треба
         banner.className = 'status-card'; 
-        // banner.classList.add(isLight ? 'on' : 'off'); // Якщо не треба міняти колір банера, прибираємо це
 
         let statusText = isLight ? "Зараз світло Є (по графіку)" : "Зараз світло ВІДСУТНЄ";
         let emoji = isLight ? "🌝" : "🌚";
