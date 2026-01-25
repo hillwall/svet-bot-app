@@ -107,25 +107,19 @@
     tg.expand();
 
     // ----------------------------------------------------
-    // БРОНЕБІЙНЕ ОТРИМАННЯ ID (Тут була проблема)
+    // БРОНЕБІЙНЕ ОТРИМАННЯ ID
     // ----------------------------------------------------
     function resolveUserId() {
-        // 1. Спробувати взяти з Telegram
         let id = tg.initDataUnsafe?.user?.id;
         if (id) return String(id);
-
-        // 2. Якщо Telegram не дав, спробувати взяти з LocalStorage
         id = localStorage.getItem('svitlo_user_id');
         if (id) return id;
-
-        // 3. Якщо нічого немає - генеруємо випадковий (для браузера/тестів)
         id = 'user_' + Math.floor(Math.random() * 1000000);
         localStorage.setItem('svitlo_user_id', id);
         return id;
     }
 
     let currentUserId = resolveUserId();
-    // Відображаємо ID на екрані для перевірки
     document.getElementById('debug-user-id').innerText = currentUserId;
 
     let regionsData = [];
@@ -144,7 +138,9 @@
             populateRegions();
             document.getElementById('loading-screen').style.display = 'none';
 
-            if (userSettings.found) {
+            // ПОКРАЩЕНА ПЕРЕВІРКА: 
+            // Якщо є прапорець found АБО якщо є записана назва області - показуємо графік
+            if (userSettings.found || (userSettings.regionName && userSettings.regionName !== "")) {
                 document.getElementById('display-queue-name').innerText = userSettings.queueName;
                 document.getElementById('display-region-name').innerText = userSettings.regionName;
                 showScheduleView();
@@ -190,16 +186,11 @@
         const qName = qSelect.options[qSelect.selectedIndex].text;
         const qUrl = qSelect.value;
         
-        if (!currentUserId || currentUserId === 'undefined') {
-            tg.showAlert("Критична помилка: ID користувача не визначено. Перезапустіть бот.");
-            return;
-        }
-
         tg.MainButton.showProgress();
-        // ВАЖЛИВО: Передаємо тільки 4 параметри, як в скрипті
         await fetch(`${GAS_API_URL}?action=saveUser&userId=${currentUserId}&regionName=${encodeURIComponent(rName)}&queueName=${encodeURIComponent(qName)}&queueUrl=${encodeURIComponent(qUrl)}&t=${Date.now()}`);
         tg.MainButton.hideProgress();
 
+        // Оновлюємо локальний об'єкт з found: true, щоб не перевантажувати сторінку
         userSettings = { found: true, regionName: rName, queueName: qName, queueUrl: qUrl };
         document.getElementById('display-queue-name').innerText = qName;
         document.getElementById('display-region-name').innerText = rName;
