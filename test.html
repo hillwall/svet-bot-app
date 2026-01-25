@@ -14,152 +14,53 @@
             padding-bottom: 20px;
             font-size: 14px;
             min-height: 100vh;
-            display: flex; 
-            flex-direction: column;
+            display: flex; flex-direction: column;
         }
-        .container { 
-            max-width: 400px; 
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .header-info {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
-        }
+        .container { max-width: 400px; flex-grow: 1; display: flex; flex-direction: column; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .queue-title { font-weight: bold; font-size: 1.1em; }
         .date-display { color: var(--tg-theme-hint-color, #aaaaaa); font-size: 0.9em; }
 
-        /* --- STATUS BANNER COLORS --- */
-        .status-card {
-            border-radius: 12px; padding: 15px;
-            text-align: center; margin-bottom: 15px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            border: none;
-        }
-        
-        /* 🌚 Світло ВІДСУТНЄ */
-        .status-card.off-mode {
-            background-color: #00193a !important; 
-            color: #e6e6a1 !important;
-        }
-        
-        /* 🌝 Світло Є */
-        .status-card.on-mode {
-            background-color: #e6e5a2 !important;
-            color: #00193a !important;
-        }
-
+        /* COLORS */
+        .status-card { border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; border: none; }
+        .status-card.off-mode { background-color: #00193a !important; color: #e6e6a1 !important; }
+        .status-card.on-mode { background-color: #e6e5a2 !important; color: #00193a !important; }
         .status-emoji { font-size: 1.5em; display: block; margin-bottom: 5px; }
         .status-timer { font-size: 1.2em; font-weight: bold; margin: 5px 0; }
         .status-next { font-size: 0.9em; opacity: 0.9; }
 
-        .nav-pills .nav-link {
-            color: var(--tg-theme-text-color, #fff); background-color: #2c2c2c;
-            margin: 0 5px; border-radius: 8px; padding: 8px 0;
-        }
-        .nav-pills .nav-link.active {
-            background-color: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #fff);
-        }
+        .nav-pills .nav-link { color: var(--tg-theme-text-color, #fff); background-color: #2c2c2c; margin: 0 5px; border-radius: 8px; padding: 8px 0; }
+        .nav-pills .nav-link.active { background-color: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #fff); }
 
         .slot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 15px; }
-        
-        .slot {
-            border-radius: 8px; padding: 12px 2px; text-align: center; font-size: 13px; font-weight: 600;
-            border: 1px solid transparent;
-            position: relative;
-        }
+        .slot { border-radius: 8px; padding: 12px 2px; text-align: center; font-size: 13px; font-weight: 600; border: 1px solid transparent; position: relative; }
+        .slot.off { background-color: #00193a; color: #e6e6a1; border-color: #00193a; }
+        .slot.on { background-color: #e6e6a1; color: #00193a; border-color: #e6e6a1; }
+        .slot.maybe { background-color: #a1a1a1; color: #ffffff; }
+        .slot.split-off-on { background: linear-gradient(90deg, #00193a 50%, #e6e6a1 50%); color: #00193a; border-color: #00193a; }
+        .slot.split-on-off { background: linear-gradient(90deg, #e6e6a1 50%, #00193a 50%); color: #00193a; border-color: #00193a; }
+        .text-stroke { text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; font-weight: 800; }
+        .slot.current { border: 2px solid var(--tg-theme-button-color, #3390ec); transform: scale(1.05); z-index: 2; }
 
-        /* --- LOGIC FOR SLOT COLORS --- */
-        .slot.off { 
-            background-color: #00193a; 
-            color: #e6e6a1; 
-            border-color: #00193a; 
-        }
-        .slot.on { 
-            background-color: #e6e6a1; 
-            color: #00193a; 
-            border-color: #e6e6a1; 
-        }
-        .slot.maybe { 
-            background-color: #a1a1a1; 
-            color: #ffffff; 
-        }
-
-        /* Gradient Blocks */
-        .slot.split-off-on {
-            background: linear-gradient(90deg, #00193a 50%, #e6e6a1 50%);
-            color: #00193a; 
-            border-color: #00193a; 
-        }
-        .slot.split-on-off {
-            background: linear-gradient(90deg, #e6e6a1 50%, #00193a 50%);
-            color: #00193a;
-            border-color: #00193a;
-        }
-
-        .text-stroke {
-            text-shadow: 
-               -1px -1px 0 #fff,  
-                1px -1px 0 #fff,
-               -1px  1px 0 #fff,
-                1px  1px 0 #fff;
-            font-weight: 800;
-        }
-
-        .slot.current { 
-            border: 2px solid var(--tg-theme-button-color, #3390ec); 
-            transform: scale(1.05); 
-            box-shadow: 0 0 10px rgba(51, 144, 236, 0.4); 
-            z-index: 2;
-        }
-
-        .btn-tg {
-            background-color: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff);
-            width: 100%; padding: 12px; border: none; border-radius: 8px; margin-top: 15px; font-weight: bold;
-        }
-        .btn-outline {
-            background: transparent; border: 1px solid var(--tg-theme-hint-color, #777); color: var(--tg-theme-hint-color, #ccc);
-            margin-top: 15px; font-size: 0.9em;
-        }
+        .btn-tg { background-color: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff); width: 100%; padding: 12px; border: none; border-radius: 8px; margin-top: 15px; font-weight: bold; }
+        .btn-outline { background: transparent; border: 1px solid var(--tg-theme-hint-color, #777); color: var(--tg-theme-hint-color, #ccc); margin-top: 15px; font-size: 0.9em; }
         
         .screen-section { display: none; } 
         .visible { display: block; }
-        
-        #loading-screen { 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            flex-grow: 1;
-            text-align: center; 
-        }
+        #loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; flex-grow: 1; text-align: center; }
         .spinner { font-size: 2em; animation: spin 1s infinite linear; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .form-select { background-position: right 0.75rem center; }
+        .disclaimer { font-size: 0.9em; color: #888; text-align: center; margin-top: 25px; font-style: italic; padding: 0 10px; }
         
-        .disclaimer {
-            font-size: 0.9em;
-            color: #888;
-            text-align: center;
-            margin-top: 25px;
-            margin-bottom: 5px;
-            line-height: 1.4;
-            font-style: italic;
-            padding: 0 10px;
-        }
+        .debug-id { font-size: 10px; color: #555; text-align: center; margin-top: 50px; user-select: text; }
     </style>
 </head>
 <body>
 
 <div class="container py-3">
-    
-    <div id="loading-screen">
-        <div class="spinner">⏳</div>
-        <div class="mt-2 text-muted">Завантаження...</div>
-    </div>
+    <div id="loading-screen"><div class="spinner">⏳</div><div class="mt-2 text-muted">Завантаження...</div></div>
 
     <div id="setup-screen" class="screen-section">
         <h4 class="mb-4 text-center">Налаштування</h4>
@@ -179,69 +80,68 @@
         <div class="text-center mt-3" id="cancel-setup-btn" style="display:none;">
             <button class="btn btn-link text-muted" onclick="showScheduleView()" style="text-decoration: none;">Скасувати</button>
         </div>
+        
+        <div class="debug-id">ID: <span id="debug-user-id">...</span></div>
     </div>
 
     <div id="schedule-screen" class="screen-section">
         <div class="header-info">
-            <div>
-                <div class="queue-title" id="display-queue-name">...</div>
-                <div class="date-display" id="display-region-name">...</div>
-            </div>
+            <div><div class="queue-title" id="display-queue-name">...</div><div class="date-display" id="display-region-name">...</div></div>
             <button class="btn btn-sm btn-dark border-0" onclick="tg.close()">✖</button>
         </div>
-
         <div id="status-banner" class="status-card d-none"></div>
-
         <ul class="nav nav-pills nav-fill mt-3">
-            <li class="nav-item">
-                <a class="nav-link active" id="tab-today" href="#" onclick="switchDay(0)">Сьогодні</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="tab-tomorrow" href="#" onclick="switchDay(1)">Завтра</a>
-            </li>
+            <li class="nav-item"><a class="nav-link active" id="tab-today" href="#" onclick="switchDay(0)">Сьогодні</a></li>
+            <li class="nav-item"><a class="nav-link" id="tab-tomorrow" href="#" onclick="switchDay(1)">Завтра</a></li>
         </ul>
-        
         <div class="text-center small text-muted mt-2" id="current-date-text"></div>
-
-        <div id="grid-container" class="slot-grid">
-            <div class="col-span-4 text-center py-5">⌛ Завантаження...</div>
-        </div>
-        
-        <div class="disclaimer">
-            Графік відповідає офіційним сповіщенням обленерго і може не співпадати з реальними відключеннями
-        </div>
-
+        <div id="grid-container" class="slot-grid"><div class="col-span-4 text-center py-5">⌛ Завантаження...</div></div>
+        <div class="disclaimer">Графік відповідає офіційним сповіщенням обленерго і може не співпадати з реальними відключеннями</div>
         <button class="btn-tg btn-outline" onclick="toggleEdit()">⚙️ Змінити чергу</button>
     </div>
 </div>
 
 <script>
-    // ЗАМІНИ НА АКТУАЛЬНИЙ URL WebApp
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx0_wj63qj6n3ADHCuHpaTdz-5NmQ61ZWSFKNCjaAkvSsmbBncpiITnkqFN3salqppCAA/exec'; 
-    
     let tg = window.Telegram.WebApp;
     tg.expand();
 
+    // ----------------------------------------------------
+    // БРОНЕБІЙНЕ ОТРИМАННЯ ID (Тут була проблема)
+    // ----------------------------------------------------
+    function resolveUserId() {
+        // 1. Спробувати взяти з Telegram
+        let id = tg.initDataUnsafe?.user?.id;
+        if (id) return String(id);
+
+        // 2. Якщо Telegram не дав, спробувати взяти з LocalStorage
+        id = localStorage.getItem('svitlo_user_id');
+        if (id) return id;
+
+        // 3. Якщо нічого немає - генеруємо випадковий (для браузера/тестів)
+        id = 'user_' + Math.floor(Math.random() * 1000000);
+        localStorage.setItem('svitlo_user_id', id);
+        return id;
+    }
+
+    let currentUserId = resolveUserId();
+    // Відображаємо ID на екрані для перевірки
+    document.getElementById('debug-user-id').innerText = currentUserId;
+
     let regionsData = [];
-    let currentUserId = tg.initDataUnsafe?.user?.id || 'TEST_USER_BROWSER';
     let userSettings = null;
     let currentSchedule = [];
 
     window.onload = async function() {
         try {
-            // Log user ID to see if it's undefined
-            console.log("Current User ID:", currentUserId);
-            
             const [userResp, treeResp] = await Promise.all([
                 fetch(`${GAS_API_URL}?action=getUser&userId=${currentUserId}&t=${Date.now()}`),
                 fetch(`${GAS_API_URL}?action=getTree&t=${Date.now()}`)
             ]);
-
             userSettings = await userResp.json();
             regionsData = await treeResp.json();
             
             populateRegions();
-
             document.getElementById('loading-screen').style.display = 'none';
 
             if (userSettings.found) {
@@ -253,7 +153,7 @@
                 showSetupView();
             }
         } catch (e) {
-            document.getElementById('loading-screen').innerHTML = `<div class="text-danger">Помилка: ${e}</div>`;
+            document.getElementById('loading-screen').innerHTML = `<div class="text-danger">Помилка з'єднання: ${e.message}</div>`;
         }
     };
 
@@ -265,7 +165,6 @@
             opt.value = rName; opt.innerText = rName;
             rSelect.appendChild(opt);
         });
-        
         rSelect.addEventListener('change', () => {
             const qSelect = document.getElementById('queue-select');
             qSelect.innerHTML = '<option value="">Оберіть чергу...</option>';
@@ -285,37 +184,30 @@
         const rSelect = document.getElementById('region-select');
         const qSelect = document.getElementById('queue-select');
         
-        if(!rSelect.value || !qSelect.value) {
-            tg.showAlert("Оберіть область та чергу");
-            return;
-        }
+        if(!rSelect.value || !qSelect.value) { tg.showAlert("Оберіть область та чергу"); return; }
 
         const rName = rSelect.options[rSelect.selectedIndex].text;
         const qName = qSelect.options[qSelect.selectedIndex].text;
         const qUrl = qSelect.value;
         
         if (!currentUserId || currentUserId === 'undefined') {
-            tg.showAlert("Помилка: не вдалося отримати ID користувача.");
+            tg.showAlert("Критична помилка: ID користувача не визначено. Перезапустіть бот.");
             return;
         }
 
         tg.MainButton.showProgress();
-        
-        // ПРАВКА: Прибрано regionUrl. Додано явне перетворення userId на String
+        // ВАЖЛИВО: Передаємо тільки 4 параметри, як в скрипті
         await fetch(`${GAS_API_URL}?action=saveUser&userId=${currentUserId}&regionName=${encodeURIComponent(rName)}&queueName=${encodeURIComponent(qName)}&queueUrl=${encodeURIComponent(qUrl)}&t=${Date.now()}`);
-        
         tg.MainButton.hideProgress();
 
         userSettings = { found: true, regionName: rName, queueName: qName, queueUrl: qUrl };
         document.getElementById('display-queue-name').innerText = qName;
         document.getElementById('display-region-name').innerText = rName;
-        
         showScheduleView();
         switchDay(0);
     }
 
     let activeDayOffset = 0;
-
     function getLocalDateString(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -334,9 +226,7 @@
 
         const date = new Date();
         date.setDate(date.getDate() + dayOffset);
-        
         const dateStrApi = getLocalDateString(date);
-        
         const dDisplay = pad(date.getDate()) + '.' + pad(date.getMonth()+1) + '.' + date.getFullYear();
         document.getElementById('current-date-text').innerText = dDisplay;
 
@@ -344,31 +234,24 @@
 
         const resp = await fetch(`${GAS_API_URL}?action=getSchedule&queueUrl=${encodeURIComponent(userSettings.queueUrl)}&date=${dateStrApi}&t=${Date.now()}`);
         const data = await resp.json();
-        
         currentSchedule = data.schedule;
         renderGrid(data.schedule);
-        
         if (dayOffset === 0) updateStatusBanner();
     }
 
     function renderGrid(scheduleArray) {
         const container = document.getElementById('grid-container');
         container.innerHTML = '';
-
         if (!scheduleArray || scheduleArray.length === 0) {
-            container.innerHTML = `<div class="empty-msg" style="grid-column: span 4; text-align:center; color:#888; padding:20px;">
-                🤷‍♂️ Графік ще не опубліковано.
-            </div>`;
+            container.innerHTML = `<div class="empty-msg" style="grid-column: span 4; text-align:center; color:#888; padding:20px;">🤷‍♂️ Графік ще не опубліковано.</div>`;
             return;
         }
-
         const now = new Date();
         const currentH = now.getHours();
 
         for (let h = 0; h < 24; h++) {
             const val1 = scheduleArray[h*2];     
             const val2 = scheduleArray[h*2+1];   
-            
             const div = document.createElement('div');
             div.className = 'slot';
             div.innerText = `${pad(h)}-${pad(h+1)}`;
@@ -378,18 +261,11 @@
                 else if (val1 === 2) div.classList.add('maybe'); 
                 else div.classList.add('on');                   
             } else {
-                if (val1 === 0 && val2 === 1) {
-                    div.classList.add('split-off-on', 'text-stroke');
-                } else if (val1 === 1 && val2 === 0) {
-                    div.classList.add('split-on-off', 'text-stroke');
-                } else {
-                    div.classList.add('off');
-                }
+                if (val1 === 0 && val2 === 1) div.classList.add('split-off-on', 'text-stroke');
+                else if (val1 === 1 && val2 === 0) div.classList.add('split-on-off', 'text-stroke');
+                else div.classList.add('off');
             }
-
-            if (activeDayOffset === 0 && h === currentH) {
-                div.classList.add('current');
-            }
+            if (activeDayOffset === 0 && h === currentH) div.classList.add('current');
             container.appendChild(div);
         }
     }
@@ -397,7 +273,6 @@
     function updateStatusBanner() {
         const banner = document.getElementById('status-banner');
         if (!currentSchedule || currentSchedule.length === 0) return;
-
         const now = new Date();
         const nowIndex = now.getHours() * 2 + (now.getMinutes() >= 30 ? 1 : 0);
         if (nowIndex >= 48) return; 
@@ -411,16 +286,12 @@
 
         banner.className = 'status-card';
         banner.classList.remove('off-mode', 'on-mode');
-
         let statusText = isLight ? "Зараз світло Є (по графіку)" : "Зараз світло ВІДСУТНЄ";
         let emoji = isLight ? "🌝" : "🌚";
         let timeLeftHtml = "", nextEventHtml = "";
 
-        if (isLight) {
-            banner.classList.add('on-mode');
-        } else {
-            banner.classList.add('off-mode');
-        }
+        if (isLight) banner.classList.add('on-mode');
+        else banner.classList.add('off-mode');
 
         if (changeIndex !== -1) {
             const targetDate = new Date();
@@ -438,7 +309,6 @@
         } else {
             timeLeftHtml = "<div>Без змін до кінця доби</div>";
         }
-
         banner.innerHTML = `<div class="status-emoji">${emoji} ${statusText}</div><div class="status-timer">${timeLeftHtml}</div><div class="status-next">${nextEventHtml}</div>`;
         banner.classList.remove('d-none');
     }
@@ -448,20 +318,16 @@
         document.getElementById('schedule-screen').classList.remove('visible');
         document.getElementById('cancel-setup-btn').style.display = 'none'; 
     }
-
     function showScheduleView() {
         document.getElementById('setup-screen').classList.remove('visible');
         document.getElementById('schedule-screen').classList.add('visible');
     }
-
     function toggleEdit() {
         document.getElementById('schedule-screen').classList.remove('visible');
         document.getElementById('setup-screen').classList.add('visible');
         document.getElementById('cancel-setup-btn').style.display = 'block'; 
     }
-
     function pad(n) { return n < 10 ? '0'+n : n; }
-
 </script>
 </body>
 </html>
